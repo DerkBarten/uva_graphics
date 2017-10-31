@@ -84,28 +84,35 @@ void DrawFigure(SDL_Texture *texture) {
     exit(-1);
   }
 
-  for(i=0; i<32; i++) {
-    /* Set drawing colour */
-    switch((i>>2) % 4) {
-      case 0:
-        colour=0xFFFF0000;// SDL_MapRGB(f,0xFF,0,0);
-        break;
-      case 1:
-        colour=0xFF00FF00;
-        break;
-      case 2:
-        colour=0xFF0000FF;
-        break;
-      case 3:
-        colour=0xFFFFFFFF;
-        break;
-    }
+  // for(i=0; i<32; i++) {
+  //   /* Set drawing colour */
+  //   switch((i>>2) % 4) {
+  //     case 0:
+  //       colour=0xFFFF0000;// SDL_MapRGB(f,0xFF,0,0);
+  //       break;
+  //     case 1:
+  //       colour=0xFF00FF00;
+  //       break;
+  //     case 2:
+  //       colour=0xFF0000FF;
+  //       break;
+  //     case 3:
+  //       colour=0xFFFFFFFF;
+  //       break;
+  //   }
 
-    /* draw a line */
-    mla(texture, mid_x, mid_y,
-        (int)roundf(size*cos(2*M_PI/32*i))+mid_x,
-        (int)roundf(size*sin(2*M_PI/32*i))+mid_y, colour);
-  }
+  //   /* draw a line */
+  //   mla(texture, mid_x, mid_y,
+  //       (int)roundf(size*cos(2*M_PI/32*i))+mid_x,
+  //       (int)roundf(size*sin(2*M_PI/32*i))+mid_y, colour);
+  // }
+
+  // First quadrant
+  //mla(texture, 200, 200, 300, 220, 0xFFFF0000);
+
+  // Second quadrant
+  mla(texture, 200, 200, 250, 300, 0xFFFF0000);
+
   /* It would be more efficient to call SDL_UpdateRect(), but I do not really
    * care.
    */

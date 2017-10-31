@@ -33,7 +33,66 @@
  *
  *
  */
+int f(int x, int y, int x0, int y0, int x1, int y1) {
+  return (y0 - y1) * x + (x1 - x0) * y + x0 * y1 - x1 * y0;
+}
+
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
+  int dx = x1 - x0; 
+  int dy = y1 - y0;
+  int d = f(x0 + 1, y0, x0, y0, x1, y1) + (x1 - x0) / 2;
+
+  printf("%i %i %i", dx, dy, d);
+  
+  // First quadrant
+  if (dx >= dy && dy >= 0){
+    printf("In first quadrant.");
+    int y = y0;
+    for (int x = x0; x <= x1; x++){
+      PutPixel(t, x, y, colour);
+      if (d < 0) {
+        y = y + 1;
+        d = d + (x1 - x0) + (y0 - y1);
+      }
+      else
+        d = d + (y0 - y1);
+    }
+  }
+
+  // Second quadrant
+  if (dy > dx && dx >= 0){
+    printf("In second quadrant.");
+    int x = x0;
+    for (int y = y0; y <= y1; y++){
+      PutPixel(t, x, y, colour);
+      if (d < 0) {
+        x = x + 1;
+        d = d + (y1 - y0) + (x0 - x1);
+      }
+      else
+        d = d + (x0 - x1);
+    }
+  }
+
+  // Third quadrant
+  if (dy > -dx && dx < 0){}
+
+  // Fourth quadrant
+  if (-dx >= dy && dy >= 0){}
+
+  // and Fifth quadrant
+  if (-dx >= -dy && -dy >= 0){}
+
+  // and Sixth quadrant
+  if (-dy > -dx && -dx >= 0){}
+
+  // and Seventh quadrant
+  if (-dy > dx && dx > 0){}
+
+  // Eight quadrant
+  if (dx >= -dy && -dy >= 0) {} 
+  
+  // ----
   int ix,iy;
   int x,y;
 
