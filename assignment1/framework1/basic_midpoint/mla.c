@@ -52,14 +52,14 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 
   // A trick to avoid specifying the souther hemisphere of the circle
   if (q5 || q6 || q7 || q4 ){
-    // TODO: xor switch
-    int temp = x0;
-    x0 = x1;
-    x1 = temp;
+    // Swapping the values
+    x0 = x0 ^ x1;
+    x1 = x1 ^ x0;
+    x0 = x0 ^ x1;
 
-    temp = y0;
-    y0 = y1;
-    y1 = temp;
+    y0 = y0 ^ y1;
+    y1 = y1 ^ y0;
+    y0 = y0 ^ y1;
 
     dx = x1 - x0; 
     dy = y1 - y0;
