@@ -111,7 +111,10 @@ void DrawFigure(SDL_Texture *texture) {
   //mla(texture, 200, 200, 300, 220, 0xFFFF0000);
 
   // Second quadrant
-  mla(texture, 200, 200, 250, 300, 0xFFFF0000);
+  //mla(texture, 200, 200, 250, 300, 0xFFFF0000);
+
+  // Third quadrant
+  mla(texture, 200, 200, 150, 300, 0xFFFF0000);
 
   /* It would be more efficient to call SDL_UpdateRect(), but I do not really
    * care.
