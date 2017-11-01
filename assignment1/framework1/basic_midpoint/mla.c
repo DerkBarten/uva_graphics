@@ -4,8 +4,8 @@
  * Description ..... Midpoint Line Algorithm
  * Created by ...... Jurgen Sturm
  *
- * Student name ....
- * Student email ...
+ * Student name Derk Barten
+ * Student email derk.barten@student.uva.nl
  * Collegekaart ....
  * Date ............
  * Comments ........
@@ -54,10 +54,10 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
       PutPixel(t, x, y, colour);
       if (d < 0) {
         y = y + 1;
-        d = d + (x1 - x0) + (y0 - y1);
+        d = d + abs(dx) - abs(dy);
       }
       else
-        d = d + (y0 - y1);
+        d = d - abs(dy);
     }
   }
 
@@ -69,10 +69,10 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
       PutPixel(t, x, y, colour);
       if (d < 0) {
         x = x + 1;
-        d = d + (y1 - y0) + (x0 - x1);
+        d = d + abs(dy) - abs(dx);
       }
       else
-        d = d + (x0 - x1);
+        d = d - abs(dx);
     }
   }
 
@@ -84,15 +84,27 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
       PutPixel(t, x, y, colour);
       if (d < 0) {
         x = x - 1;
-        d = d + (y1 - y0) + (x0 - x1);
+        d = d + abs(dy) - abs(dx);
       }
       else
-        d = d + (x0 - x1);
+        d = d - abs(dx);
     }
   }
 
   // Fourth quadrant
-  if (-dx >= dy && dy >= 0){}
+  if (-dx >= dy && dy >= 0){
+    printf("In fourth quadrant.");
+    int y = y0;
+    for (int x = x0; x >= x1; x--){
+      PutPixel(t, x, y, colour);
+      if (d < 0) {
+        y = y + 1;
+        d = d + abs(dx) - abs(dy);
+      }
+      else
+        d = d - abs(dy);
+    }
+  }
 
   // and Fifth quadrant
   if (-dx >= -dy && -dy >= 0){}
@@ -106,7 +118,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   // Eight quadrant
   if (dx >= -dy && -dy >= 0) {} 
   
-  // ----
+  /*
   int ix,iy;
   int x,y;
 
@@ -120,6 +132,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   if(y1>y0) iy=1; else iy=-1;
   for(y=y0;y!=y1;y+=iy)
     PutPixel(t,x1,y,colour);
+  */
 
   return;
 }
