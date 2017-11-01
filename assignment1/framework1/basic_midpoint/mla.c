@@ -42,13 +42,33 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int dy = y1 - y0;
   int d = f(x0 + 1, y0, x0, y0, x1, y1) + (x1 - x0) / 2;
 
-  printf("dx:%i dy:%i d:%i", dx, dy, d);
-  
-  // -1 or + 1
+  // TODO: optimize
+
+  // The quadrants of the southern hemisphere
+  int q5 = -dx >= -dy && -dy >= 0;
+  int q6 = -dy > -dx && -dx >= 0;
+  int q7 = -dy > dx && dx > 0;
+  int q8 = dx >= -dy && -dy >= 0;
+
+  // Dirty trick to avoid specifying the souther hemisphere of the circle
+  if (q5 || q6 || q7 || q8 ){
+    // TODO: xor switch
+    int temp = x0;
+    x0 = x1;
+    x1 = temp;
+
+    temp = y0;
+    y0 = y1;
+    y1 = temp;
+
+    dx = x1 - x0; 
+    dy = y1 - y0;
+  }
+
+  // TODO: create a better approach than this
 
   // First quadrant
   if (dx >= dy && dy >= 0){
-    printf("In first quadrant.");
     int y = y0;
     for (int x = x0; x <= x1; x++){
       PutPixel(t, x, y, colour);
@@ -63,7 +83,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 
   // Second quadrant
   if (dy > dx && dx >= 0){
-    printf("\nIn second quadrant.\n");
     int x = x0;
     for (int y = y0; y <= y1; y++){
       PutPixel(t, x, y, colour);
@@ -78,7 +97,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 
   // Third quadrant
   if (dy > -dx && dx < 0){
-    printf("\nIn third quadrant.\n");
     int x = x0;
     for (int y = y0; y <= y1; y++){
       PutPixel(t, x, y, colour);
@@ -93,7 +111,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 
   // Fourth quadrant
   if (-dx >= dy && dy >= 0){
-    printf("In fourth quadrant.");
     int y = y0;
     for (int x = x0; x >= x1; x--){
       PutPixel(t, x, y, colour);
@@ -105,34 +122,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
         d = d - abs(dy);
     }
   }
-
-  // and Fifth quadrant
-  if (-dx >= -dy && -dy >= 0){}
-
-  // and Sixth quadrant
-  if (-dy > -dx && -dx >= 0){}
-
-  // and Seventh quadrant
-  if (-dy > dx && dx > 0){}
-
-  // Eight quadrant
-  if (dx >= -dy && -dy >= 0) {} 
-  
-  /*
-  int ix,iy;
-  int x,y;
-
-  PutPixel(t,x0,y0,colour);
-  PutPixel(t,x1,y1,colour);
-
-  if(x1>x0) ix=1; else ix=-1;
-  for(x=x0;x!=x1;x+=ix)
-    PutPixel(t,x,y0,colour);
-
-  if(y1>y0) iy=1; else iy=-1;
-  for(y=y0;y!=y1;y+=iy)
-    PutPixel(t,x1,y,colour);
-  */
 
   return;
 }
