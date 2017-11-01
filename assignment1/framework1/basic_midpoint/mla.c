@@ -45,13 +45,13 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   // TODO: optimize
 
   // The quadrants of the southern hemisphere
+  int q4 = -dx >= dy && dy >= 0;
   int q5 = -dx >= -dy && -dy >= 0;
   int q6 = -dy > -dx && -dx >= 0;
   int q7 = -dy > dx && dx > 0;
-  int q8 = dx >= -dy && -dy >= 0;
 
-  // Dirty trick to avoid specifying the souther hemisphere of the circle
-  if (q5 || q6 || q7 || q8 ){
+  // A trick to avoid specifying the souther hemisphere of the circle
+  if (q5 || q6 || q7 || q4 ){
     // TODO: xor switch
     int temp = x0;
     x0 = x1;
@@ -65,63 +65,128 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     dy = y1 - y0;
   }
 
-  // TODO: create a better approach than this
+// Specifies if d need to be increased or decreased
+int direction_change = 1;
+// Speficies if x is the main direction of the line
+int x_direction = 1;
 
-  // First quadrant
-  if (dx >= dy && dy >= 0){
-    int y = y0;
-    for (int x = x0; x <= x1; x++){
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        y = y + 1;
-        d = d + abs(dx) - abs(dy);
-      }
-      else
-        d = d - abs(dy);
-    }
-  }
+// No need to check Q1 because the default values are Q1's values
+// Q8
+if (dx >= -dy && -dy >= 0){
+  direction_change = -1;
+}
+// Q2
+if (dy > dx && dx >= 0){
+  x_direction = 0;
+}
+// Q3
+if (dy > -dx && dx < 0){
+  direction_change = -1;
+  x_direction = 0;
+}
 
-  // Second quadrant
-  if (dy > dx && dx >= 0){
-    int x = x0;
-    for (int y = y0; y <= y1; y++){
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        x = x + 1;
-        d = d + abs(dy) - abs(dx);
-      }
-      else
-        d = d - abs(dx);
+// We need two loops for either looping over the x or y
+if (x_direction){
+  int y = y0;
+  int sum = abs(dx) - abs(dy);
+  int abs_dy = abs(dy);
+  for (int x = x0; x <= x1; x++){
+    PutPixel(t, x, y, colour);
+    if (d < 0) {
+      y = y + direction_change;
+      d = d + sum;
     }
+    else
+      d = d - abs_dy;
   }
+}
+else {
+  int x = x0;
+  // Remove the function calls from the loop
+  int sum = abs(dy) - abs(dx);
+  int abs_dx = abs(dx);
+  for (int y = y0; y <= y1; y++){
+    PutPixel(t, x, y, colour);
+    if (d < 0) {
+      x = x + direction_change;
+      d = d + sum;
+    }
+    else
+      d = d - abs_dx;
+  }
+}
 
-  // Third quadrant
-  if (dy > -dx && dx < 0){
-    int x = x0;
-    for (int y = y0; y <= y1; y++){
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        x = x - 1;
-        d = d + abs(dy) - abs(dx);
-      }
-      else
-        d = d - abs(dx);
-    }
-  }
+  // // First quadrant
+  // if (dx >= dy && dy >= 0){
+  //   int y = y0;
+  //   for (int x = x0; x <= x1; x++){
+  //     PutPixel(t, x, y, colour);
+  //     if (d < 0) {
+  //       y = y + 1;
+  //       d = d + abs(dx) - abs(dy);
+  //     }
+  //     else
+  //       d = d - abs(dy);
+  //   }
+  // }
 
-  // Fourth quadrant
-  if (-dx >= dy && dy >= 0){
-    int y = y0;
-    for (int x = x0; x >= x1; x--){
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        y = y + 1;
-        d = d + abs(dx) - abs(dy);
-      }
-      else
-        d = d - abs(dy);
-    }
-  }
+  // // Q8
+  // if (dx >= -dy && -dy >= 0){
+  //   int y = y0;
+  //   for (int x = x0; x <= x1; x++){
+  //     PutPixel(t, x, y, colour);
+  //     if (d < 0) {
+  //       y = y - 1;
+  //       d = d + abs(dx) - abs(dy);
+  //     }
+  //     else
+  //       d = d - abs(dy);
+  //   }
+  // }
+
+  // // Second quadrant
+  // if (dy > dx && dx >= 0){
+  //   int x = x0;
+  //   for (int y = y0; y <= y1; y++){
+  //     PutPixel(t, x, y, colour);
+  //     if (d < 0) {
+  //       x = x + 1;
+  //       d = d + abs(dy) - abs(dx);
+  //     }
+  //     else
+  //       d = d - abs(dx);
+  //   }
+  // }
+
+  // // Third quadrant
+  // if (dy > -dx && dx < 0){
+  //   int x = x0;
+  //   for (int y = y0; y <= y1; y++){
+  //     PutPixel(t, x, y, colour);
+  //     if (d < 0) {
+  //       x = x - 1;
+  //       d = d + abs(dy) - abs(dx);
+  //     }
+  //     else
+  //       d = d - abs(dx);
+  //   }
+  // }
+
+  
+
+  // // Fourth quadrant
+  // if (-dx >= dy && dy >= 0){
+  //   int y = y0;
+  //   for (int x = x0; x >= x1; x--){
+  //     PutPixel(t, x, y, colour);
+  //     if (d < 0) {
+  //       y = y + 1;
+  //       d = d + abs(dx) - abs(dy);
+  //     }
+  //     else
+  //       d = d - abs(dy);
+  //   }
+  // }
 
   return;
 }
