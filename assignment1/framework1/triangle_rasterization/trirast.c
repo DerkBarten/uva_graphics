@@ -3,11 +3,11 @@
  * Description ..... Implements triangle rasterization
  * Created by ...... Paul Melis
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
- * Comments ........
+ * Student name: Derk Barten
+ * Student email: derk.barten@student.uva.nl
+ * Collegekaart 11043075
+ * Date: 3 November 2017
+ * Comments: -
  *
  *
  * (always fill in these fields before submitting!!)
@@ -19,31 +19,30 @@
 
 #include "types.h"
 
+// The formula of a line
 float f(float x, float y, float x0, float y0, float x1, float y1) {
     return (y0 - y1) * x + (x1 - x0) * y + x0 * y1 - x1 * y0;
   }
 
-  // https://stackoverflow.com/questions/7074010/find-maximum-of-three-number-in-c-without-using-conditional-statement-and-ternar
-  float float_max(float a, float b, float c)
-  {
-        float m = a;
-        if(m < b)
-            m = b;
-        if(m < c)
-            m = c;
-        //printf("%i\n", (int)ceil(m));
-       return m;
-  }
+float float_max(float a, float b, float c)
+{
+    float m = a;
+    if(m < b)
+        m = b;
+    if(m < c)
+        m = c;
+    return m;
+}
 
-  float  float_min(float a, float b, float c)
-  {
-       float m = a;
-        if(m > b)
-            m = b;
-        if(m > c)
-            m = c;
-       return m;
-  }
+float  float_min(float a, float b, float c)
+{
+    float m = a;
+    if(m > b)
+        m = b;
+    if(m > c)
+        m = c;
+    return m;
+}
 
 /*
  * Rasterize a single triangle.
@@ -52,7 +51,6 @@ float f(float x, float y, float x0, float y0, float x1, float y1) {
  * The triangle is drawn in color (r,g,b).
  */
 
- // Baseline 30000 triangles per second
 void
 draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
     byte r, byte g, byte b)
@@ -72,7 +70,7 @@ draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
                     (gamma > 0 || f(-1, -1, x0, y0, x1, y1) * f(x2, y2, x0, y0, x1, y1) > 0)) {
                     PutPixel(x, y, r, g, b);
                     // Gourad color scheme
-                    // PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
+                    // PutPixel(x, y, 255*alpha, 255*beta, 255*gamma);
                 }
             }
         } 
@@ -112,9 +110,11 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
     int beta_check = f(-1, -1, x2, y2, x0, y0) * f(x1, y1, x2, y2, x0, y0) > 0;
     int gamma_check = f(-1, -1, x0, y0, x1, y1) * f(x2, y2, x0, y0, x1, y1) > 0;
 
+    // Loop over the bounding box around the triangle
     for (int y = y_min; y < y_max; y++) {
         for (int x = x_min; x < x_max; x++ ) {
 
+            // Calculate the alpha/beta/gamma values beloning to the point
             alpha = (d_alpha_base + d_alpha_x  + d_alpha_y)  / f_alpha;
             beta = (d_beta_base + d_beta_x + d_beta_y) / f_beta;
             gamma = (d_gamma_base + d_gamma_x + d_gamma_y) / f_gamma;
@@ -127,7 +127,7 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
                     (gamma > 0 || gamma_check)) {
                     PutPixel(x, y, r, g, b);
                     // Gourad color scheme
-                    // PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
+                    //PutPixel(x, y, 255*alpha, 255*beta, 255*gamma);
                 }
             }
             // Instead of recalculating the whole f, just increase the value d

@@ -4,11 +4,11 @@
  * Description ..... Midpoint Line Algorithm
  * Created by ...... Jurgen Sturm
  *
- * Student name Derk Barten
- * Student email derk.barten@student.uva.nl
- * Collegekaart ....
- * Date ............
- * Comments ........
+ * Student name: Derk Barten
+ * Student email: derk.barten@student.uva.nl
+ * Collegekaart 11043075
+ * Date: 3 November 2017
+ * Comments: -
  *
  *
  * (always fill in these fields before submitting!!)
@@ -17,22 +17,7 @@
 #include "SDL.h"
 #include "init.h"
 
-/*
- * Midpoint Line Algorithm
- *
- * As you probably will have figured out, this is the part where you prove
- * your programming skills. The code in the mla function should draw a direct
- * line between (x0,y0) and (x1,y1) in the specified color.
- *
- * Until now, the example code below draws only a horizontal line between
- * (x0,y0) and (x1,y0) and a vertical line between (x1,y1).
- *
- * And here the challenge begins..
- *
- * Good luck!
- *
- *
- */
+// The formula of a line
 int f(int x, int y, int x0, int y0, int x1, int y1) {
   return (y0 - y1) * x + (x1 - x0) * y + x0 * y1 - x1 * y0;
 }
@@ -48,9 +33,9 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int q6 = -dy > -dx && -dx >= 0;
   int q7 = -dy > dx && dx > 0;
 
-  // A trick to avoid specifying the souther hemisphere of the circle
-  if (q5 || q6 || q7 || q4 ){
-    // Swapping the values
+  // A trick to avoid specifying the whole otherside of the circle
+  if (q4 || q5 || q6 || q7 ){
+    // Swapping the values using the xor trick
     x0 = x0 ^ x1;
     x1 = x1 ^ x0;
     x0 = x0 ^ x1;
@@ -68,7 +53,9 @@ int direction_change = 1;
 // Speficies if x is the main direction of the line
 int x_direction = 1;
 
-// No need to check Q1 because the default values are Q1's values
+// No need to check Q1 because the above values are the default values of Q1's
+// Q8 is used here because all these quadrants increment instead of decrement, 
+// which makes it easier to generalize.
 // Q8
 if (dx >= -dy && -dy >= 0){
   direction_change = -1;
@@ -83,33 +70,39 @@ if (dy > -dx && dx < 0){
   x_direction = 0;
 }
 
+
 // We need two loops for either looping over the x or y
 if (x_direction){
   int y = y0;
   int sum = abs(dx) - abs(dy);
   int abs_dy = abs(dy);
+  // Loop over the x direction
   for (int x = x0; x <= x1; x++){
     PutPixel(t, x, y, colour);
+    // If the current d is negative, change the y value by -1 or 1
     if (d < 0) {
       y = y + direction_change;
       d = d + sum;
     }
     else
+      // Keep decreasing the d
       d = d - abs_dy;
   }
 }
 else {
   int x = x0;
-  // Remove the function calls from the loop
   int sum = abs(dy) - abs(dx);
   int abs_dx = abs(dx);
+  // Loop over the y direction
   for (int y = y0; y <= y1; y++){
     PutPixel(t, x, y, colour);
+    // If the current d is negative, change the x value by -1 or 1
     if (d < 0) {
       x = x + direction_change;
       d = d + sum;
     }
     else
+      // Keep decreasing the d
       d = d - abs_dx;
   }
 }
