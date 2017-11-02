@@ -42,8 +42,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int dy = y1 - y0;
   int d = f(x0 + 1, y0, x0, y0, x1, y1) + (x1 - x0) / 2;
 
-  // TODO: optimize
-
   // The quadrants of the southern hemisphere
   int q4 = -dx >= dy && dy >= 0;
   int q5 = -dx >= -dy && -dy >= 0;
