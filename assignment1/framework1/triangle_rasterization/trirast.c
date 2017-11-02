@@ -19,26 +19,22 @@
 
 #include "types.h"
 
+int f(int x, int y, int x0, int y0, int x1, int y1) {
+    return (y0 - y1) * x + (x1 - x0) * y + x0 * y1 - x1 * y0;
+  }
+
 /*
  * Rasterize a single triangle.
  * The triangle is specified by its corner coordinates
  * (x0,y0), (x1,y1) and (x2,y2).
  * The triangle is drawn in color (r,g,b).
  */
-    /*
-    printf("Original: \n");
-    printf("[ %f %f ]\n", p00, p01);
-    printf("[ %f %f]\n", p10, p11);
-    printf("Inverse: \n");
-    printf("[ %f %f ]\n", p_inv00, p_inv10);
-    printf("[ %f %f]\n\n", p_inv01, p_inv11);
-    */
- 
+
+ // Baseline 40000 triangles per second
 void
 draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
     byte r, byte g, byte b)
 {
-    PutPixel(10, 10, 255, 255, 255);
     // Create the matrix of (P1-P0), (P2-P0)
     float p00 = x1 - x0;
     float p01 = y1 - y0;
@@ -52,18 +48,33 @@ draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
     float p_inv10 = det * -p10;
     float p_inv11 = det * p00;
 
+    // Naively loop over the whole window
     for (int h = 0; h < 64; h++) {
         for (int w = 0; w < 128; w++ ) {
             float px = w - x0;
             float py = h - y0;
             
+            // x1y1
             float beta = p_inv00 * px + p_inv10 * py;
+            // x2y2
             float gamma = p_inv01 * px + p_inv11 * py;
+            // x0y0
             float alpha = 1 - beta - gamma;
 
             if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1  && gamma >= 0 && gamma <= 1) {
+                // Check if we should draw the edge between x1y1 and x2y2
+                if (alpha == 0 && f(-1, -1, x1, y1, x2, y2) < 0 ){
+                    continue;
+                }
+                if (beta == 0 && f(-1,-1, x0, y0, x2, y2) < 0) {
+                    continue;
+                }
+                if (gamma == 0 && f(-1, -1, x0, y0, x1, y1) < 0){
+                    continue;
+                }
                 PutPixel(w, h, r, g, b);
-                //PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
+                // Gourad color scheme
+                // PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
             }
         } 
     }    

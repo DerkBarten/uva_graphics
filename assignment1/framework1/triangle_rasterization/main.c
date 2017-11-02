@@ -69,6 +69,17 @@ void PutPixel(int x, int y, byte r, byte g, byte b)
         return;
     }
 
+    // Mode for detecting overlapping edges
+    if (color_by_putpixel_count) {
+        if (framebuffer[3*(framebuffer_width*y+x)] == 0){
+            framebuffer[3*(framebuffer_width*y+x)] = 128;
+        }
+        else if (framebuffer[3*(framebuffer_width*y+x)] == 128){
+            framebuffer[3*(framebuffer_width*y+x)] = 255;
+        }
+        return;
+    }
+
     // The pixels in framebuffer[] are layed out sequentially,
     // with the R, G and B values one after the other, e.g
     // RGBRGBRGB...
