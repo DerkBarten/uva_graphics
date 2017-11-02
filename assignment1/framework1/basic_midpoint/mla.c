@@ -113,6 +113,5 @@ else {
       d = d - abs_dx;
   }
 }
-
   return;
 }

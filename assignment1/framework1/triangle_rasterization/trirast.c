@@ -23,6 +23,28 @@ float f(float x, float y, float x0, float y0, float x1, float y1) {
     return (y0 - y1) * x + (x1 - x0) * y + x0 * y1 - x1 * y0;
   }
 
+  // https://stackoverflow.com/questions/7074010/find-maximum-of-three-number-in-c-without-using-conditional-statement-and-ternar
+  float float_max(float a, float b, float c)
+  {
+        float m = a;
+        if(m < b)
+            m = b;
+        if(m < c)
+            m = c;
+        //printf("%i\n", (int)ceil(m));
+       return m;
+  }
+
+  float  float_min(float a, float b, float c)
+  {
+       float m = a;
+        if(m > b)
+            m = b;
+        if(m > c)
+            m = c;
+       return m;
+  }
+
 /*
  * Rasterize a single triangle.
  * The triangle is specified by its corner coordinates
@@ -30,7 +52,7 @@ float f(float x, float y, float x0, float y0, float x1, float y1) {
  * The triangle is drawn in color (r,g,b).
  */
 
- // Baseline 40000 triangles per second
+ // Baseline 30000 triangles per second
 void
 draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
     byte r, byte g, byte b)
@@ -61,4 +83,65 @@ void
 draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float y2,
     byte r, byte g, byte b)
 {
+    // Create a bounding box around the triangle
+    int x_min = (int)float_min(x0, x1, x2);
+    int x_max = (int)(float_max(x0, x1, x2) + 1);
+    int y_min = (int)float_min(y0, y1, y2);
+    int y_max = (int)(float_max(y0, y1, y2) + 1);
+
+    // Get the f value of the starting point
+    float d_alpha_base = f(x_min, y_min, x1, y1, x2, y2) ;
+    float d_beta_base = f(x_min, y_min, x2, y2, x0, y0) ;
+    float d_gamma_base = f(x_min, y_min, x0, y0, x1, y1);
+
+    // These variables will hold the incremental delta value
+    float d_alpha_x, d_alpha_y = 0;
+    float d_beta_x, d_beta_y = 0;
+    float d_gamma_x, d_gamma_y = 0;
+
+    // These constants are removed from the loop
+    float f_alpha = f(x0, y0, x1, y1, x2, y2);
+    float f_beta = f(x1, y1, x2, y2, x0, y0);
+    float f_gamma = f(x2, y2, x0, y0, x1, y1);
+    
+    // Initializing outside the loop might save some performance
+    float alpha, beta, gamma = 0;
+
+    // These booleans are constant so remove them from the loop
+    int alpha_check =  f(-1, -1, x1, y1, x2, y2) * f(x0, y0, x1, y1, x2, y2) > 0;
+    int beta_check = f(-1, -1, x2, y2, x0, y0) * f(x1, y1, x2, y2, x0, y0) > 0;
+    int gamma_check = f(-1, -1, x0, y0, x1, y1) * f(x2, y2, x0, y0, x1, y1) > 0;
+
+    for (int y = y_min; y < y_max; y++) {
+        for (int x = x_min; x < x_max; x++ ) {
+
+            alpha = (d_alpha_base + d_alpha_x  + d_alpha_y)  / f_alpha;
+            beta = (d_beta_base + d_beta_x + d_beta_y) / f_beta;
+            gamma = (d_gamma_base + d_gamma_x + d_gamma_y) / f_gamma;
+
+            // Check if the point is in the triangle
+            if (alpha >= 0  && beta >= 0 && gamma >= 0) {
+                // Check if we should draw the pixel
+                if ((alpha > 0 || alpha_check) && 
+                    (beta > 0  || beta_check) && 
+                    (gamma > 0 || gamma_check)) {
+                    PutPixel(x, y, r, g, b);
+                    // Gourad color scheme
+                    // PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
+                }
+            }
+            // Instead of recalculating the whole f, just increase the value d
+            d_alpha_x += (y1 - y2);
+            d_beta_x += (y2 - y0);
+            d_gamma_x += (y0 - y1); 
+        }
+        // Reset the increments done in the x direction
+        d_alpha_x = 0;
+        d_beta_x= 0;
+        d_gamma_x = 0;
+
+        d_alpha_y +=  (x2 - x1);
+        d_beta_y += (x0 - x2);
+        d_gamma_y += (x1 - x0);
+    }    
 }
