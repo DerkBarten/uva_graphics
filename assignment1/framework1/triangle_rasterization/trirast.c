@@ -30,10 +30,6 @@ int f(int x, int y, int x0, int y0, int x1, int y1) {
  * The triangle is drawn in color (r,g,b).
  */
 
-int is_same_sign(int n1, int n2) {
-    return n1 >= 0 && n2 >= 0 || n1 < 0 && n2 < 0; 
-}
-
  // Baseline 40000 triangles per second
 void
 draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
@@ -68,9 +64,9 @@ draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2,
             // Check if the point is in the triangle
             if (alpha >= 0 && beta >= 0 && gamma >= 0) {
                 // Check if we should draw the pixel
-                if ((alpha > 0 || is_same_sign(f(-1, -1, x1, y1, x2, y2), f(x0, y0, x1, y1, x2, y2))) && 
-                    (beta > 0  || is_same_sign(f(-1, -1, x2, y2, x0, y0), f(x1, y1, x2, y2, x0, y0))) && 
-                    (gamma > 0 || is_same_sign(f(-1, -1, x0, y0, x1, y1), f(x2, y2, x0, y0, x1, y1)))) {
+                if ((alpha > 0 || f(-1, -1, x1, y1, x2, y2) * f(x0, y0, x1, y1, x2, y2) > 0) && 
+                    (beta > 0  || f(-1, -1, x2, y2, x0, y0) * f(x1, y1, x2, y2, x0, y0) > 0) && 
+                    (gamma > 0 || f(-1, -1, x0, y0, x1, y1) * f(x2, y2, x0, y0, x1, y1) > 0)) {
                     PutPixel(w, h, r, g, b);
                     // Gourad color scheme
                     // PutPixel(w, h, 255*alpha, 255*beta, 255*gamma);
