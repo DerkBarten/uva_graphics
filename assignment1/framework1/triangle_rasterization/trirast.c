@@ -110,6 +110,7 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
     int beta_check = f(-1, -1, x2, y2, x0, y0) * f(x1, y1, x2, y2, x0, y0) > 0;
     int gamma_check = f(-1, -1, x0, y0, x1, y1) * f(x2, y2, x0, y0, x1, y1) > 0;
 
+    int in_triangle = 0;
     // Loop over the bounding box around the triangle
     for (int y = y_min; y < y_max; y++) {
         for (int x = x_min; x < x_max; x++ ) {
@@ -118,6 +119,11 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
             alpha = (d_alpha_base + d_alpha_x  + d_alpha_y)  / f_alpha;
             beta = (d_beta_base + d_beta_x + d_beta_y) / f_beta;
             gamma = (d_gamma_base + d_gamma_x + d_gamma_y) / f_gamma;
+            
+            // Check for an early exit if we know we exited the triangle
+            if ((alpha < 0 || beta < 0 || gamma < 0 ) && in_triangle){
+                break;
+            }
 
             // Check if the point is in the triangle
             if (alpha >= 0  && beta >= 0 && gamma >= 0) {
@@ -127,8 +133,9 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
                     (gamma > 0 || gamma_check)) {
                     PutPixel(x, y, r, g, b);
                     // Gourad color scheme
-                    //PutPixel(x, y, 255*alpha, 255*beta, 255*gamma);
+                    // PutPixel(x, y, 255*alpha, 255*beta, 255*gamma);
                 }
+                in_triangle = 1;
             }
             // Instead of recalculating the whole f, just increase the value d
             d_alpha_x += (y1 - y2);
@@ -143,5 +150,7 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
         d_alpha_y +=  (x2 - x1);
         d_beta_y += (x0 - x2);
         d_gamma_y += (x1 - x0);
+
+        in_triangle = 0;
     }    
 }
