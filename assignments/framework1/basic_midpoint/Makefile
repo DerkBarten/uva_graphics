@@ -12,7 +12,7 @@
 .SUFFIXES: .c .o #.cpp
 
 CC=gcc
-CFLAGS=$(shell sdl2-config --cflags) -W -Wall -std=c99 -pedantic-errors
+CFLAGS=$(shell sdl2-config --cflags) -W -Wall -Werror -std=c99 -pedantic-errors
 #SOURCES=$(shell ls *.c *.c??)
 UNAME=$(shell uname -s)
 
