@@ -4,11 +4,22 @@
  * Created by ...... Daan Kruis
  * Original by ..... Paul Melis
  *
- * Student names:
- * Student numbers:
+ * Student names: Derk Barten
+ * Student numbers: 11043075
+ * 
+ * Q1: The rotations are applied in the function DrawRotatedTeapot. If the
+ * order variable is equal to "XYZ", the rotations are applied in first the x-
+ * direction, then the y-direction and lastly the z-direction. If this is not
+ * the case, the order will be first y, x, z.
  *
+ * Q2: A rotation around the x-axis(blue) and/or z-axis(red) only results in a
+ *  rotation around the x-axis in the last teapot. This is due to the fact that
+ *  the z-axis of the first teapot is lined up to x-axis of the last teapot.  This
+ *  caused the last to lose one degree of freedom in the x direction.
+ * 
  */
 
+ // red z, blue x
 var gl;
 var prog;
 var width;
@@ -198,6 +209,14 @@ function DrawTeapots() {
     // Translate Teapot to 0.0, 0.0, 0.0 (Used to illustrate how to translate).
     m4.translate(mvMat, 0.0, 0.0, 0.0, mvMat);
     DrawRotatedTeapot(x_rotation, 0.0, z_rotation);
+
+    mvMat = m4.identity();
+    m4.translate(mvMat, 15.0, 0.0, 0.0, mvMat);
+    DrawRotatedTeapot(x_rotation, 45, z_rotation);
+
+    mvMat = m4.identity();
+    m4.translate(mvMat, 30.0, 0.0, 0.0, mvMat);
+    DrawRotatedTeapot(x_rotation, 90, z_rotation);
 }
 
 function GimbalDrawGLScene() {

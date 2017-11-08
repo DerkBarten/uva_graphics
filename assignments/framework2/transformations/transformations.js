@@ -60,7 +60,7 @@ function vector_divide(v, value) {
 
 // TODO: This does not work!
 function vector_dotproduct3D(v1, v2) {
-    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] + v2[2];
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 function myRotate(angle, x, y, z) {
@@ -70,33 +70,36 @@ function myRotate(angle, x, y, z) {
     //
     var a = [x, y, z];
     w = vector_divide(a, vector_length3D(a));
-    console.log("Value of w: " + w);
+    //console.log("Value of w: " + w);
     argmin_w = abs_argmin([Math.abs(w[0]), Math.abs(w[1]), Math.abs(w[2])]);
 
-    console.log("Argmin of w: " + argmin_w);
+    //console.log("Argmin of w: " + argmin_w);
     if (argmin_w < 0 || argmin_w >= w.length) {
-        console.log("Error: argmin out of bouds");
+        //console.log("Error: argmin out of bouds");
         return -1;
     }
     var t = w.slice(); 
     t[argmin_w] = 1;
-    console.log("t: " + t);
+    //console.log("t: " + t);
 
     var u = vector_divide(cross_product3D(t, w), vector_length3D(cross_product3D(t, w)));
-    console.log("u: " + u);
-    console.log("w dot u: " + vector_dotproduct3D(w, u));
+    //console.log("u: " + u);
+    //console.log("w dot u: " + vector_dotproduct3D(w, u));
     
 
-    var v = cross_product3D(a, u);
+    var v = cross_product3D(w, u);
+    //console.log("v: " + v);
+    //console.log("v dot u: " + vector_dotproduct3D(v, u));
+    
     //
     // 2. Set up the three matrices making up the rotation
     //
     var A = [
-             u[0], v[0], a[0], 0.0,
-             u[1], v[1], a[1], 0.0,
-             u[2], v[2], a[2], 0.0,
-             0.0, 0.0, 0.0, 1.0
-            ];
+        u[0], u[1], u[2], 0.0,
+        v[0], v[1], v[2], 0.0,
+        a[0], a[1], a[2], 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ];
 
     var B = [
              Math.cos(angle), Math.sin(angle), 0.0, 0.0,
@@ -105,13 +108,12 @@ function myRotate(angle, x, y, z) {
              0.0, 0.0, 0.0, 1.0
             ];
 
-    var C = [
-             u[0], u[1], u[2], 0.0,
-             v[0], v[1], v[2], 0.0,
-             a[0], a[1], a[2], 0.0,
-             0.0, 0.0, 0.0, 1.0
-            ];
-
+    var C = [    
+        u[0], v[0], a[0], 0.0,
+        u[1], v[1], a[1], 0.0,
+        u[2], v[2], a[2], 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ];
 
     var mat = m4.multiply(A, m4.multiply(B, C));
     return mat;
