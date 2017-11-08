@@ -32,8 +32,8 @@ function myScale(x, y, z) {
 function abs_argmin(list) {
     var min = -1;
     var argmin = -1;
-    for (var i = 0; i < length(list); i++) {
-        if (list[i] < min|| list[i] == -1) {
+    for (var i = 0; i < list.length; i++) {
+        if (list[i] < min || min == -1) {
             min = list[i];
             argmin = i; 
         }
@@ -41,14 +41,26 @@ function abs_argmin(list) {
     return argmin;
 }
 
-function cross_product3D(a, b) {
-    return [ a[1] * b[2] - a[2] * b[1],
-             a[2] * b[0] - a[0] * b[2],
-             a[0] * b[1] - a[1] * b[0] ]
+function cross_product3D(v, w) {
+    return [ v[1] * w[2] - v[2] * w[1],
+             v[2] * w[0] - v[0] * w[2],
+             v[0] * w[1] - v[1] * w[0] ];
 }
 
 function vector_length3D(v) {
-    return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2))
+    return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2));
+}
+
+function vector_divide(v, value) {
+    for (var i = 0; i < v.length; i++) {
+        v[i] = v[i] / value;
+    }
+    return v;
+}
+
+// TODO: This does not work!
+function vector_dotproduct3D(v1, v2) {
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] + v2[2];
 }
 
 function myRotate(angle, x, y, z) {
@@ -57,16 +69,24 @@ function myRotate(angle, x, y, z) {
     // 1. Create the orthonormal basis
     //
     var a = [x, y, z];
-    a = a / vector_length3D(a);
-    argmin_a = abs_argmin([abs(a[0]), abs(a[1]), abs(a[2])]);
+    w = vector_divide(a, vector_length3D(a));
+    console.log("Value of w: " + w);
+    argmin_w = abs_argmin([Math.abs(w[0]), Math.abs(w[1]), Math.abs(w[2])]);
 
-    if (argmin_a < 0 || argmin_a >= length(a)) {
+    console.log("Argmin of w: " + argmin_w);
+    if (argmin_w < 0 || argmin_w >= w.length) {
+        console.log("Error: argmin out of bouds");
         return -1;
     }
-    var temp = a; 
-    temp[argmin_a] = 1;
+    var t = w.slice(); 
+    t[argmin_w] = 1;
+    console.log("t: " + t);
 
-    var u = cross_product3D(tmp, a) / vector_length3D(cross_product3D(tmp, a));
+    var u = vector_divide(cross_product3D(t, w), vector_length3D(cross_product3D(t, w)));
+    console.log("u: " + u);
+    console.log("w dot u: " + vector_dotproduct3D(w, u));
+    
+
     var v = cross_product3D(a, u);
     //
     // 2. Set up the three matrices making up the rotation
