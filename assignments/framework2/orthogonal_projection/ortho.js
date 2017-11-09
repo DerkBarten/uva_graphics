@@ -1,6 +1,6 @@
 /*
- * Student names:
- * Student numbers:
+ * Student names: Derk Barten
+ * Student numbers: 11043075
  *
  */
 

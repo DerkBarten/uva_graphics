@@ -14,8 +14,9 @@
  *
  * Q2: A rotation around the x-axis(blue) and/or z-axis(red) only results in a
  *  rotation around the x-axis in the last teapot. This is due to the fact that
- *  the z-axis of the first teapot is lined up to x-axis of the last teapot.  This
- *  caused the last to lose one degree of freedom in the x direction.
+ * the last teapot has its x-axis lined up with the z-axis of the first teapot,
+ * which is not rotated. We lose one degree of freedom in the x-axis in the
+ * last teapot because of this. 
  * 
  */
 
