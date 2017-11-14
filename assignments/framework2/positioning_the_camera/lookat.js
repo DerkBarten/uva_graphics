@@ -25,6 +25,13 @@ function vector_dotproduct3D(v1, v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
+// Multiply a vector with a scalar
+function vector_scale(v, s) {
+    for (var i = 0; i < v.length; i++) {
+        v[i] = v[i] * s;
+    }
+}
+
 // Compute the vector length for 3D vectors
 function vector_length3D(v) {
     return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2));
@@ -43,13 +50,16 @@ function myLookAt(eyeX, eyeY, eyeZ,
     ];
 
     // cz is the vector pointing  from the camera to the center
-    var cz =vector_norm3D([centerX - eyeX, centerY - eyeY, centerZ - eyeZ]);
+    var cz = vector_norm3D([centerX - eyeX, centerY - eyeY, centerZ - eyeZ]);
+
     // cx is ortagonal to the vector up and cz
-    var cx = vector_norm3D(cross_product3D([upX, upY, upZ],cz));
+    var cx = vector_norm3D(cross_product3D(cz, [upX, upY, upZ]));
+
     // cy is ortogonal to cx and cz
     var cy = cross_product3D(cx, cz);
 
     // Checks to see if the basis is orthagonal
+    /*
     console.debug("cx: " + cx);
     console.debug("cy: " + cy);
     console.debug("cz: " + cz);
@@ -61,14 +71,12 @@ function myLookAt(eyeX, eyeY, eyeZ,
     console.debug("cx dot cy " + vector_dotproduct3D(cx, cy));
     console.debug("cx dot cz " + vector_dotproduct3D(cx, cz));
     console.debug("cy dot cz " + vector_dotproduct3D(cy, cz));
-    
-  
-    // TODO: Question, why all inverted?
-    // Is R in the assignment pdf correct?
+    */
+
     var R_inv = [
-        -cx[0], -cy[0], -cz[0], 0.0,
-        -cx[1], -cy[1], -cz[1], 0.0,
-        -cx[2], -cy[2], -cz[2], 0.0,
+        cx[0], cy[0], -cz[0], 0.0,
+        cx[1], cy[1], -cz[1], 0.0,
+        cx[2], cy[2], -cz[2], 0.0,
         0.0, 0.0, 0.0, 1
     ];
     
