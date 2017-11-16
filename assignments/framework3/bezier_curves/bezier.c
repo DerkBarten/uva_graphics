@@ -29,14 +29,6 @@
 
 int factorial(int n) {
     int result = 1;
-
-    // Enable negative factorials
-    if (n < 0) {
-        result *= -1;
-        n = abs(n);
-        printf("Negative Factorial\n");
-    }
-
     for (; n > 0; n--) {
         result *= n;
     }
@@ -56,10 +48,11 @@ evaluate_bezier_curve(float *x, float *y, control_point p[], int num_points, flo
 {
     *x = 0.0;
     *y = 0.0;
+    float b;
     int n = num_points - 1;
 
     for (int i = 0; i <= n; i++) {
-        float b = bernstein(n, i, u);
+        b = bernstein(n, i, u);
         *x += b * p[i].x;
         *y += b * p[i].y; 
     }
@@ -83,34 +76,24 @@ evaluate_bezier_curve(float *x, float *y, control_point p[], int num_points, flo
 void
 draw_bezier_curve(int num_segments, control_point p[], int num_points)
 {
-    double segment_size = 1.0 / num_segments;
-    // Every line segment is expressed by four floats
-    int array_size = sizeof(float) * 4 * num_segments;
+    float segment_size = 1.0 / num_segments;
     // The number of vertices
-    int indices = num_segments * 2;
+    int indices = (num_segments + 1);
+    // Every line segment is expressed by two floats
+    int array_size = sizeof(GLfloat) * indices * 2;
     // Memory needed to hold the vertices
     GLfloat array[array_size];
 
-    double b = 0.0;
+    float b = 0.0;
     // Reuse the control point struct to hold xy coordinates
     control_point p1;
-    control_point p2;
     // Calculate the starting position of the curve
-    evaluate_bezier_curve(&p1.x, &p1.y, p, num_points, 0.0);
 
-    for (int i = 0; i < num_segments; i++) {
+    for (int i = 0; i < indices; i++) {
+        evaluate_bezier_curve(&p1.x, &p1.y, p, num_points, b);
+        array[i*2] = (GLfloat)p1.x;
+        array[(i*2) + 1] = (GLfloat)p1.y;
         b += segment_size;
-        
-        evaluate_bezier_curve(&p2.x, &p2.y, p, num_points, b);
-        // Add the start and end coordinates of the line to the array
-        array[i*4] = p1.x;
-        array[(i*4)+1] = p1.y;
-        array[(i*4)+2] = p2.x;
-        array[(i*4)+3] = p2.y;
-
-        // End point of the previous line becomes the start of the next line
-        p1.x = p2.x;
-        p1.y = p2.y;
     }
     GLuint buffer[1];
 
@@ -139,5 +122,29 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
 int
 intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
-    return 0;
+    int i = 0;
+    float x_ = 0.0;
+    float y_ = 0.0;
+    float u = 0.5;
+    int MAX_IT = 10;
+    float delta = 0.25;
+
+    while (fabs(x - x_) > 0.001){
+        evaluate_bezier_curve(&x_, &y_, p, 4, u);
+
+        if (x_ > x) {
+            u -= delta;
+        } else {
+            u += delta;
+        } 
+        delta /= 2.0;
+        
+        if (i > MAX_IT) {
+            printf("reached max IT\n");
+            return 0;
+        }
+        i++;
+    }
+    *y = y_;
+    return 1;
 }
