@@ -82,7 +82,7 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
     // Every line segment is expressed by two floats
     int array_size = sizeof(GLfloat) * indices * 2;
     // Memory needed to hold the vertices
-    GLfloat array[array_size];
+    GLfloat *array = (GLfloat *)malloc(array_size);
 
     float b = 0.0;
     // Reuse the control point struct to hold xy coordinates
@@ -111,6 +111,8 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, buffer);
+
+    free(array);
 }
 
 /* Find the intersection of a cubic Bezier curve with the line X=x.
