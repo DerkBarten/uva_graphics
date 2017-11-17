@@ -142,7 +142,6 @@ intersect_cubic_bezier_curve(float *y, control_point p[], float x)
         delta /= 2.0;
         
         if (i > MAX_IT) {
-            printf("reached max IT\n");
             return 0;
         }
         i++;
