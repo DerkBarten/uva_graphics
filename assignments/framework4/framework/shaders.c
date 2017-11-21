@@ -27,6 +27,8 @@
 // based on normal, light position, etc. As such, it merely creates
 // a "silhouette" of an object.
 
+float REFLECTION_OFFSET = 0.0001;
+
 float
 max(vec3 color)
 {
@@ -61,7 +63,7 @@ shade_matte(intersection_point ip)
         light light_src = scene_lights[i];
         vec3 l = v3_normalize(v3_subtract(light_src.position, ip.p));
 
-        vec3 ray_origin = v3_add(ip.p, v3_multiply(ip.n, 0.0001));
+        vec3 ray_origin = v3_add(ip.p, v3_multiply(ip.n, REFLECTION_OFFSET));
         if (shadow_check(ray_origin, l)) {
             continue;
         }
@@ -114,7 +116,20 @@ shade_blinn_phong(intersection_point ip)
 vec3
 shade_reflection(intersection_point ip)
 {
-    return v3_create(1, 0, 0);
+    float matte = 0.0;
+    vec3 refl;
+    for (int i = 0; i < scene_num_lights; i++) {
+        light light_src = scene_lights[i];
+        vec3 l = v3_normalize(v3_subtract(light_src.position, ip.p));
+        matte += light_src.intensity * fmax(0, v3_dotprod(ip.n, l));
+    }
+    // TODO check if > 1;
+    matte += scene_ambient_light;
+
+    vec3 r = v3_subtract(v3_multiply(v3_multiply(ip.n, 2),  v3_dotprod(ip.i, ip.n)), ip.i);
+    refl = ray_color(ip.ray_level + 1, v3_add(ip.p, v3_multiply(ip.n, REFLECTION_OFFSET)), r);
+
+    return v3_add(v3_multiply(refl, 0.25), v3_multiply(v3_create(matte, matte, matte), 0.75));
 }
 
 // Returns the shaded color for the given point to shade.
