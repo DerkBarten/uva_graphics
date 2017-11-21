@@ -71,9 +71,9 @@ shade_matte(intersection_point ip)
         color.y += c;
         color.z += c;
     }
-    // color.x += scene_ambient_light;
-    // color.y += scene_ambient_light;
-    // color.z += scene_ambient_light;
+    color.x += scene_ambient_light;
+    color.y += scene_ambient_light;
+    color.z += scene_ambient_light;
 
     return color_range(color);
 }
@@ -81,7 +81,34 @@ shade_matte(intersection_point ip)
 vec3
 shade_blinn_phong(intersection_point ip)
 {
-    return v3_create(1, 0, 0);
+    vec3 cd = v3_create(1, 0, 0);
+    vec3 cs = v3_create(1, 1, 1);
+
+    float kd = 0.8;
+    float ks = 0.5;
+    float a = 50;
+
+    float phong = 0.0;
+    float matte = 0.0;
+
+    for (int i = 0; i < scene_num_lights; i++) {
+        light light_src = scene_lights[i];
+        vec3 l = v3_normalize(v3_subtract(light_src.position, ip.p));
+        vec3 e = v3_normalize(v3_subtract(scene_camera_position, ip.p));
+        vec3 h = v3_normalize(v3_add(l, e));
+
+        vec3 ray_origin = v3_add(ip.p, v3_multiply(ip.n, 0.0001));
+        if (shadow_check(ray_origin, l)) {
+            continue;
+        }
+
+        matte += light_src.intensity * fmax(0, v3_dotprod(ip.n, l));
+        phong += light_src.intensity * (pow(v3_dotprod(ip.n, h), a));
+    }
+
+    return
+    v3_add(v3_multiply(cd, scene_ambient_light + kd * matte),
+           v3_multiply(cs, ks * phong));
 }
 
 vec3
