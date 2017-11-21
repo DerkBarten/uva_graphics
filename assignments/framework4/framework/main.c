@@ -390,6 +390,7 @@ ray_trace(void)
     float   image_plane_width, image_plane_height;
     vec3    color;
     char    buf[128];
+    vec3    image_plane_center;
 
     struct timeval  t0, t1;
     float           time_taken;
@@ -412,18 +413,28 @@ ray_trace(void)
     image_plane_height = 2.0 * tan(0.5*VFOV/180*M_PI);
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
-    // ...
-    // ...
-    // ...
+    float l = -image_plane_width / 2.0;
+    float r = image_plane_width / 2.0;
+    float t = image_plane_height / 2.0;
+    float b = -image_plane_height / 2.0;
 
     // Loop over all pixels in the framebuffer
     for (j = 0; j < framebuffer_height; j++)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            // ...
-            // ...
-            // ...
+            // Calculate the position of s
+            float u = l + (r - l) * ((i + 0.5) / (float)framebuffer_width);
+            float v = b + (t - b) * ((j + 0.5) / (float)framebuffer_height);
+            float d = 1.0;
+
+            vec3 ray_direction = 
+                v3_add(v3_multiply(right_vector, u),
+                v3_add(v3_multiply(up_vector, v),
+                       v3_multiply(forward_vector, d)));
+            
+            vec3 ray_origin = scene_camera_position;
+            color = ray_color(0, ray_origin, ray_direction);
 
             // Output pixel color
             put_pixel(i, j, color.x, color.y, color.z);
