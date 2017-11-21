@@ -123,8 +123,8 @@ shade_reflection(intersection_point ip)
         vec3 l = v3_normalize(v3_subtract(light_src.position, ip.p));
         matte += light_src.intensity * fmax(0, v3_dotprod(ip.n, l));
     }
-    // TODO check if > 1;
     matte += scene_ambient_light;
+    if (matte > 1.0) { matte = 1.0; }
 
     vec3 r = v3_subtract(v3_multiply(v3_multiply(ip.n, 2),  v3_dotprod(ip.i, ip.n)), ip.i);
     refl = ray_color(ip.ray_level + 1, v3_add(ip.p, v3_multiply(ip.n, REFLECTION_OFFSET)), r);
