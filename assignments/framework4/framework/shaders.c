@@ -102,13 +102,13 @@ shade_blinn_phong(intersection_point ip)
             continue;
         }
 
-        matte += light_src.intensity * fmax(0, v3_dotprod(ip.n, l));
         phong += light_src.intensity * (pow(v3_dotprod(ip.n, h), a));
+        matte += light_src.intensity * fmax(0, v3_dotprod(ip.n, l));
     }
 
     return
-    v3_add(v3_multiply(cd, scene_ambient_light + kd * matte),
-           v3_multiply(cs, ks * phong));
+    color_range(v3_add(v3_multiply(cd, scene_ambient_light + kd * matte),
+           v3_multiply(cs, ks * phong)));
 }
 
 vec3
