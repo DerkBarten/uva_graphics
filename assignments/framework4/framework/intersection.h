@@ -11,6 +11,9 @@ unsigned long long num_bboxes_tested;
 int     find_first_intersection(intersection_point *ip,
             vec3 ray_origin, vec3 ray_direction);
 
+int static find_first_intersected_bvh_triangle(intersection_point *ip,
+            vec3 ray_origin, vec3 ray_direction);
+
 int     shadow_check(vec3 ray_origin, vec3 ray_direction);
 
 #endif

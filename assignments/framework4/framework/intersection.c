@@ -17,6 +17,7 @@
 #include "constants.h"
 #include "scene.h"
 #include "bvh.h"
+#include "bbox.h"
 
 // A few counters for gathering statistics on the number and types
 // of ray shot
@@ -179,7 +180,53 @@ static int
 find_first_intersected_bvh_triangle(intersection_point* ip,
     vec3 ray_origin, vec3 ray_direction)
 {
-    return 0;
+    bvh_node *current = bvh_root;
+
+    bvh_node *left;
+    bvh_node *right;
+
+    // TODO: what should be in these variables?
+    float t_min_left = 0.0;
+    float t_max_left = C_INFINITY;
+    float t_min_right = 0.0;
+    float t_max_right = C_INFINITY;
+
+    int left_intersect;
+    int right_intersect;
+
+    while (1) {
+        if (!current->is_leaf) {
+            left = inner_node_left_child(current);
+            right = inner_node_right_child(current);
+
+            left_intersect = bbox_intersect(&t_min_left, &t_max_left, left->bbox, ray_origin, ray_direction, t_min_left, t_max_left);
+            right_intersect = bbox_intersect(&t_min_right, &t_max_right, right->bbox, ray_origin, ray_direction, t_min_right, t_max_right);
+            if (!left_intersect && !right_intersect) {
+                return 0;
+            }
+
+            if (&t_min_left < &t_min_right) {
+                current = left;
+            }
+            else {
+                current = right;
+            }
+        }
+        else {
+            triangle *triangles = leaf_node_triangles(current);
+            int num_triangles = leaf_node_num_triangles(current);
+            int intersect = 0;
+
+            // Get the triangle
+            for (int i = 0; i < num_triangles; i++) {
+                intersect = ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction);
+                if (intersect) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+    }
 }
 
 // Returns the nearest hit of the given ray with objects in the scene
@@ -288,4 +335,3 @@ shadow_check(vec3 ray_origin, vec3 ray_direction)
 
     return 0;
 }
-
