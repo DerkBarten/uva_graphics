@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #include "intersection.h"
 #include "v3math.h"
 #include "constants.h"
@@ -180,54 +181,97 @@ static int
 find_first_intersected_bvh_triangle(intersection_point* ip,
     vec3 ray_origin, vec3 ray_direction)
 {
-    bvh_node *current = bvh_root;
+    bvh_traverse(ip, ray_origin, ray_direction, bvh_root, 0.0, C_INFINITY);    
+}
 
+// copy p2 to p1
+int intersection_copy(intersection_point *p1, intersection_point *p2) {
+    p1->i = p2->i;
+    p1->material = p2->material;
+    p1->n = p2->n;
+    p1->p = p2->p;
+    p1->ray_level = p2->ray_level;
+    p1->t = p2->t;
+    return 0;
+}
+
+int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bvh_node *current, float t_min_, float t_max_) {
     bvh_node *left;
     bvh_node *right;
+    float t_max = t_max_;
+    float t_min = t_min_;
+    float t_min_left;
+    float t_max_left;
+    float t_min_right;
+    float t_max_right;
+    intersection_point left_ip;
+    intersection_point right_ip;
+    int left_triangle_intersect = 0;
+    int right_triangle_intersect = 0;
 
-    // TODO: what should be in these variables?
-    float t_min_left = 0.0;
-    float t_max_left = C_INFINITY;
-    float t_min_right = 0.0;
-    float t_max_right = C_INFINITY;
 
-    int left_intersect;
-    int right_intersect;
-
-    while (1) {
-        if (!current->is_leaf) {
+    if (!current->is_leaf) {
             left = inner_node_left_child(current);
             right = inner_node_right_child(current);
 
-            left_intersect = bbox_intersect(&t_min_left, &t_max_left, left->bbox, ray_origin, ray_direction, t_min_left, t_max_left);
-            right_intersect = bbox_intersect(&t_min_right, &t_max_right, right->bbox, ray_origin, ray_direction, t_min_right, t_max_right);
-            if (!left_intersect && !right_intersect) {
+            int left_box_intersect = bbox_intersect(&t_min_left, &t_max_left, left->bbox, ray_origin, ray_direction, t_min, t_max);
+            int right_box_intersect = bbox_intersect(&t_min_right, &t_max_right, right->bbox, ray_origin, ray_direction, t_min, t_max);
+            
+            if (!left_box_intersect && !right_box_intersect) {
                 return 0;
             }
-
-            if (&t_min_left < &t_min_right) {
-                current = left;
+            if (left_box_intersect && bvh_traverse(&left_ip, ray_origin, ray_direction, left, t_min_left, t_max_left)) {
+                left_triangle_intersect = 1;
             }
-            else {
-                current = right;
+            if (right_box_intersect && bvh_traverse(&right_ip, ray_origin, ray_direction, right, t_min_right, t_max_right)) {
+                right_triangle_intersect = 1;
             }
-        }
-        else {
-            triangle *triangles = leaf_node_triangles(current);
-            int num_triangles = leaf_node_num_triangles(current);
-            int intersect = 0;
 
-            // Get the triangle
-            for (int i = 0; i < num_triangles; i++) {
-                intersect = ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction);
-                if (intersect) {
-                    return 1;
+            if (left_triangle_intersect && right_triangle_intersect) {
+                if (v3_length(v3_subtract(left_ip.p, ray_origin)) < v3_length(v3_subtract(right_ip.p, ray_origin))) {
+                    intersection_copy(ip, &left_ip);
+                }
+                else {
+                    intersection_copy(ip, &right_ip);
                 }
             }
-            return 0;
+            else if (left_triangle_intersect) {
+                intersection_copy(ip, &left_ip);
+            }
+            else if (right_triangle_intersect) {
+                intersection_copy(ip, &right_ip);
+            }
+            else {
+                return 0;
+            }
+            return 1;
+    }
+    else {
+        intersection_point best_ip;
+        triangle *triangles = leaf_node_triangles(current);
+        int num_triangles = leaf_node_num_triangles(current);
+        int intersect = 0;
+
+        // make sure we get the best here
+        for (int i = 0; i < num_triangles; i++) {
+            if (ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction)) {
+                if (!intersect) {
+                    intersection_copy(&best_ip, ip);
+                }
+                intersect = 1;
+                if (v3_length(v3_subtract(ip->p, ray_origin)) < v3_length(v3_subtract(best_ip.p, ray_origin))) {
+                    intersection_copy(&best_ip, ip);
+                }
+            }   
         }
+        if (intersect) {
+            intersection_copy(ip, &best_ip);
+            return 1;
+        }
+        return 0;
     }
 }
+
 
 // Returns the nearest hit of the given ray with objects in the scene
 // (either a sphere or a triangle).
