@@ -220,6 +220,8 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
             if (!left_box_intersect && !right_box_intersect) {
                 return 0;
             }
+
+            // Traverse the trees if there is intersection
             if (left_box_intersect && bvh_traverse(&left_ip, ray_origin, ray_direction, left, t_min_left, t_max_left)) {
                 left_triangle_intersect = 1;
             }
@@ -265,6 +267,7 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
             }   
         }
         if (intersect) {
+            //*ip = best_ip;
             intersection_copy(ip, &best_ip);
             return 1;
         }
