@@ -181,18 +181,7 @@ static int
 find_first_intersected_bvh_triangle(intersection_point* ip,
     vec3 ray_origin, vec3 ray_direction)
 {
-    bvh_traverse(ip, ray_origin, ray_direction, bvh_root, 0.0, C_INFINITY);    
-}
-
-// copy p2 to p1
-int intersection_copy(intersection_point *p1, intersection_point *p2) {
-    p1->i = p2->i;
-    p1->material = p2->material;
-    p1->n = p2->n;
-    p1->p = p2->p;
-    p1->ray_level = p2->ray_level;
-    p1->t = p2->t;
-    return 0;
+    return bvh_traverse(ip, ray_origin, ray_direction, bvh_root, 0.0, C_INFINITY);
 }
 
 int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bvh_node *current, float t_min_, float t_max_) {
@@ -206,8 +195,6 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
     float t_max_right;
     intersection_point left_ip;
     intersection_point right_ip;
-    int left_triangle_intersect = 0;
-    int right_triangle_intersect = 0;
 
 
     if (!current->is_leaf) {
@@ -221,32 +208,32 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
                 return 0;
             }
 
-            // Traverse the trees if there is intersection
-            if (left_box_intersect && bvh_traverse(&left_ip, ray_origin, ray_direction, left, t_min_left, t_max_left)) {
-                left_triangle_intersect = 1;
-            }
-            if (right_box_intersect && bvh_traverse(&right_ip, ray_origin, ray_direction, right, t_min_right, t_max_right)) {
-                right_triangle_intersect = 1;
-            }
+            int left_triangle_intersect = 0;
+            int right_triangle_intersect = 0;
 
-            if (left_triangle_intersect && right_triangle_intersect) {
-                if (v3_length(v3_subtract(left_ip.p, ray_origin)) < v3_length(v3_subtract(right_ip.p, ray_origin))) {
-                    intersection_copy(ip, &left_ip);
-                }
-                else {
-                    intersection_copy(ip, &right_ip);
+            if (left_box_intersect) {
+                left_triangle_intersect = bvh_traverse(&left_ip, ray_origin, ray_direction, left, t_min_left, t_max_left);
+                if (left_triangle_intersect) {
+                    *ip = left_ip;
                 }
             }
-            else if (left_triangle_intersect) {
-                intersection_copy(ip, &left_ip);
+            if (right_box_intersect) {
+                right_triangle_intersect = bvh_traverse(&right_ip, ray_origin, ray_direction, right, t_min_right, t_max_right);
+                if (right_triangle_intersect) {
+                    *ip = right_ip;
+                }
             }
-            else if (right_triangle_intersect) {
-                intersection_copy(ip, &right_ip);
+            if (right_box_intersect && left_box_intersect && 
+                right_triangle_intersect && left_triangle_intersect) {
+                
+                if (left_ip.t < right_ip.t) {
+                    *ip = left_ip;
+                }
             }
-            else {
-                return 0;
+            if (right_triangle_intersect || left_triangle_intersect) {
+                return 1;
             }
-            return 1;
+            return 0;
     }
     else {
         intersection_point best_ip;
@@ -257,18 +244,14 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
         // make sure we get the best here
         for (int i = 0; i < num_triangles; i++) {
             if (ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction)) {
-                if (!intersect) {
-                    intersection_copy(&best_ip, ip);
-                }
-                intersect = 1;
-                if (v3_length(v3_subtract(ip->p, ray_origin)) < v3_length(v3_subtract(best_ip.p, ray_origin))) {
-                    intersection_copy(&best_ip, ip);
+                if (ip->t < best_ip.t || !intersect) {
+                    best_ip = *ip;
+                    intersect = 1;
                 }
             }   
         }
         if (intersect) {
-            //*ip = best_ip;
-            intersection_copy(ip, &best_ip);
+            *ip = best_ip;
             return 1;
         }
         return 0;
