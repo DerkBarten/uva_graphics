@@ -423,21 +423,54 @@ ray_trace(void)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            // Calculate the position of s
-            float u = l + (r - l) * ((i + 0.5) / (float)framebuffer_width);
-            float v = b + (t - b) * ((j + 0.5) / (float)framebuffer_height);
-            float d = 1.0;
+            if (do_antialiasing) {
+                float u0 = l + (r - l) * ((i + 0.25) / (float)framebuffer_width);
+                float v0 = b + (t - b) * ((j + 0.25) / (float)framebuffer_height);
 
-            vec3 ray_direction = 
-                v3_add(v3_multiply(right_vector, u),
-                v3_add(v3_multiply(up_vector, v),
-                       v3_multiply(forward_vector, d)));
-            
-            vec3 ray_origin = scene_camera_position;
-            color = ray_color(0, ray_origin, ray_direction);
+                float u1 = l + (r - l) * ((i + 0.75) / (float)framebuffer_width);
+                float v1 = b + (t - b) * ((j + 0.25) / (float)framebuffer_height);
 
-            // Output pixel color
-            put_pixel(i, j, color.x, color.y, color.z);
+                float u2 = l + (r - l) * ((i + 0.25) / (float)framebuffer_width);
+                float v2 = b + (t - b) * ((j + 0.75) / (float)framebuffer_height);
+
+                float u3 = l + (r - l) * ((i + 0.75) / (float)framebuffer_width);
+                float v3 = b + (t - b) * ((j + 0.75) / (float)framebuffer_height);
+                
+                vec3 ray_origin = scene_camera_position;
+                vec3 vd = v3_multiply(forward_vector, 1.0);
+
+                vec3 c0 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u0),
+                v3_add(v3_multiply(up_vector, v0), vd)));
+
+                vec3 c1 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u1),
+                v3_add(v3_multiply(up_vector, v1), vd)));
+
+                vec3 c2 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u2),
+                v3_add(v3_multiply(up_vector, v2), vd)));
+
+                vec3 c3 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u3),
+                v3_add(v3_multiply(up_vector, v3), vd)));
+
+                color = v3_multiply(v3_add(c0, v3_add(c1, v3_add(c2, c3))), 0.25); 
+                put_pixel(i, j, color.x, color.y, color.z);
+            }
+            else {
+                // Calculate the position of s
+                float u = l + (r - l) * ((i + 0.5) / (float)framebuffer_width);
+                float v = b + (t - b) * ((j + 0.5) / (float)framebuffer_height);
+                float d = 1.0;
+
+                vec3 ray_direction = 
+                    v3_add(v3_multiply(right_vector, u),
+                    v3_add(v3_multiply(up_vector, v),
+                        v3_multiply(forward_vector, d)));
+                
+                vec3 ray_origin = scene_camera_position;
+                color = ray_color(0, ray_origin, ray_direction);
+
+                // Output pixel color
+                put_pixel(i, j, color.x, color.y, color.z);
+            }
         }
 
         sprintf(buf, "Ray-tracing ::: %.0f%% done", 100.0*j/framebuffer_height);
