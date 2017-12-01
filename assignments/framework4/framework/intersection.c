@@ -240,8 +240,7 @@ int bvh_traverse(intersection_point* ip, vec3 ray_origin, vec3 ray_direction, bv
         triangle *triangles = leaf_node_triangles(current);
         int num_triangles = leaf_node_num_triangles(current);
         int intersect = 0;
-
-        // make sure we get the best here
+        
         for (int i = 0; i < num_triangles; i++) {
             if (ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction)) {
                 if (ip->t < best_ip.t || !intersect) {

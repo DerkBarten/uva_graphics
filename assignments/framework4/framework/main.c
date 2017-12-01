@@ -439,6 +439,7 @@ ray_trace(void)
                 vec3 ray_origin = scene_camera_position;
                 vec3 vd = v3_multiply(forward_vector, 1.0);
 
+                // Calculate the color of the four subpixels
                 vec3 c0 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u0),
                 v3_add(v3_multiply(up_vector, v0), vd)));
 
@@ -451,6 +452,7 @@ ray_trace(void)
                 vec3 c3 = ray_color(0, ray_origin, v3_add(v3_multiply(right_vector, u3),
                 v3_add(v3_multiply(up_vector, v3), vd)));
 
+                // Take the average of the four rays
                 color = v3_multiply(v3_add(c0, v3_add(c1, v3_add(c2, c3))), 0.25); 
                 put_pixel(i, j, color.x, color.y, color.z);
             }
