@@ -1,3 +1,7 @@
 *.pdf
 *.tar.*
 *.o
+*.vtk
+*.zip
+*.json
+*.ppm
