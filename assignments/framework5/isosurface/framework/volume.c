@@ -1,8 +1,8 @@
 /* Computer Graphics, Assignment, Volume rendering with cubes/points/isosurface
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
+ * Student name .... Derk Barten
+ * Student email ... derk.barten@student.uva.nl
+ * Collegekaart .... 11043075
  * Date ............
  * Comments ........
  *
@@ -31,6 +31,15 @@ voxel2idx(int i, int j, int k)
     return (k*ny + j)*nx + i;
 }
 
+vec3
+voxel2vec3(int i, int j, int k){
+    vec3 v;
+    v.x = i * sizex * nx;
+    v.y = j * sizey * ny;
+    v.z = k * sizez * nz;
+    return v;
+}
+
 /* Extract a cell from the volume, so that datapoint 0 of the
    cell corresponds to voxel (i, j, k), datapoint 1 to voxel (i+1, j, k),
    etc. See the assignment. */
@@ -38,6 +47,24 @@ cell
 get_cell(int i, int j, int k)
 {
     cell c;
+    c.p[0] = voxel2vec3(i, j, k);
+    c.p[1] = voxel2vec3(i + 1, j, k);
+    c.p[2] = voxel2vec3(i, j + 1, k);
+    c.p[3] = voxel2vec3(i + 1, j + 1, k);
+    c.p[4] = voxel2vec3(i, j, k + 1);
+    c.p[5] = voxel2vec3(i + 1, j, k + 1);
+    c.p[6] = voxel2vec3(i, j + 1, k + 1);
+    c.p[7] = voxel2vec3(i + 1, j + 1, k + 1);
+
+    c.value[0] = volume[voxel2idx(i, j, k)];
+    c.value[1] = volume[voxel2idx(i + 1, j, k)];
+    c.value[2] = volume[voxel2idx(i, j + 1, k)];
+    c.value[3] = volume[voxel2idx(i + 1, j + 1, k)];
+    c.value[4] = volume[voxel2idx(i, j, k + 1)];
+    c.value[5] = volume[voxel2idx(i + 1, j, k + 1)];
+    c.value[6] = volume[voxel2idx(i, j + 1, k + 1)];
+    c.value[7] = volume[voxel2idx(i + 1, j + 1, k + 1)];
+
     return c;
 }
 
