@@ -444,7 +444,16 @@ DrawGLScene(void)
         glScalef(1, 1 + (rand_float()-0.5)*0.6, 1);
 
         DrawPolylist(polylistTreeStem);
-        DrawPolylist(polylistTreeLeafs);
+        
+        // How many leaves to draw
+        int leaves = 8;
+        // How much rotation per leaf
+        int rotation = 360.0 / leaves;
+        for (int i = 0; i < leaves; i ++) {
+            glRotatef(rotation * i, 0, 1, 0);
+            // Draw the specified number of leaves
+            DrawPolylist(polylistTreeLeafs);
+        }
 
         glPopMatrix();
     }
