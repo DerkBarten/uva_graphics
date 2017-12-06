@@ -139,7 +139,8 @@ InitializePolygonlists(void)
 
     // A single tree object
     polylistTreeLeafs = CreatePolylist(10);
-    createSphere(polylistTreeLeafs, 0.7, 0.7, 0.7,  0, 1.7, 0,  0, 1, 0);
+    loadPolygonalObject(polylistTreeLeafs, "leaf.obj", texture_names, 1.0, 0, 1.7, 0);
+
     for (i = 0; i < polylistTreeLeafs->length; i++)
         polylistTreeLeafs->items[i].texture_id = texture_names[0];
 
@@ -270,8 +271,16 @@ InitGL(void)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glCheckError("glTexParameteri");
 
-            glTexImage2D(GL_TEXTURE_2D, 0, texture_internal_format,
-                width, height, 0, texture_format, texture_type, image_data);
+            // Min filter:
+            // GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR, 
+            // GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST
+            // All mipmaps:
+            // the road is too blurry at long distance, white lines at the edges blurr
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            gluBuild2DMipmaps(GL_TEXTURE_2D, texture_internal_format,
+                width, height, texture_format, texture_type, image_data);
+
             glCheckError("glTexImage2D");
 
             // Free the image data, as OpenGL will have made its internal copy by now

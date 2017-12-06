@@ -116,6 +116,23 @@ createSphere(polys * list, double sx, double sy, double sz, double ox,
     }
 }
 
+/*
+void createLeaf(polys * list, double ox, double oy, double oz) {
+    poly    p;
+
+    // prepare poly variable, as the color values are the same for all generated polys
+    p.points = 4;
+    p.color[0] = 0;
+    p.color[1] = 1;
+    p.color[2] = 0;
+    p.color[3] = 0;
+
+    loadPolygonalObject(list, "leaf.obj");
+
+        
+}
+*/
+
 // Calculate the coordinates, normal vector and texture coordinates for
 // a hemisphere point at the given latitude and longitude (in degrees).
 // The radius of the hemisphere is s, the center point (at the base of the
