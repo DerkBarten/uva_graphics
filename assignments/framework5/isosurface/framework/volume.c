@@ -31,12 +31,14 @@ voxel2idx(int i, int j, int k)
     return (k*ny + j)*nx + i;
 }
 
+
+// TODO: probably breaking here
 vec3
 voxel2vec3(int i, int j, int k){
     vec3 v;
-    v.x = i * sizex * nx;
-    v.y = j * sizey * ny;
-    v.z = k * sizez * nz;
+    v.x = i * sizex;
+    v.y = j * sizey;
+    v.z = k * sizez;
     return v;
 }
 
