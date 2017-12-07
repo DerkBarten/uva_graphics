@@ -188,6 +188,24 @@ void FillArrayWithCubes(void)
 
 void FillArrayWithIsosurface(void)
 {
+    int i, j, k, l, n;
+    cell c;
+    triangle triangles[12];
+
+    for (k = 0; k < nz; k++)
+    {
+        for (j = 0; j < ny; j++)
+        {
+            for (i = 0; i < nx; i++)
+            {
+               c = get_cell(i, j, k); 
+               n = generate_cell_triangles(triangles, c, isovalue);
+               for (l = 0; l < n; l++) {
+                   AddVertexToArray(*triangles[l].p, *triangles[l].n);
+               }
+            }
+        }
+    }
 }
 
 void DrawScene(void)

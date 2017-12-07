@@ -27,6 +27,16 @@ interpolate_points(unsigned char isovalue, vec3 p1, vec3 p2, unsigned char v1, u
     return v3_add(v3_multiply(p1, 0.5), v3_multiply(p2, 0.5));
 }
 
+
+void set_triangle_normal(triangle* t) {
+    vec3 norm = v3_normalize(v3_crossprod(v3_subtract(t->p[1], t->p[0]),
+                                          v3_subtract(t->p[0], t->p[0])));
+    t->n[0] = norm;
+    t->n[1] = norm;
+    t->n[2] = norm;
+}
+
+
 /* Using the given iso-value generate triangles for the tetrahedron
    defined by corner vertices v0, v1, v2, v3 of cell c.
 
@@ -43,38 +53,51 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 {
     vec3 points[] = {c.p[v0], c.p[v1], c.p[v2], c.p[v3]};
     double values[] = {c.value[v0], c.value[v1], c.value[v2], c.value[v3]};
- 
-    triangle tri;
 
     for (int i = 0; i < 4; i++) {
         // Only one under, others above
         if (values[i] < isovalue && values[(i + 1) % 4] > isovalue &&
             values[(i + 2) % 4] > isovalue && values[(i + 3) % 4] > isovalue) {
-            
-            tri.p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
-            tri.p[1] = interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
-            tri.p[0] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+
+            triangles[0].p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
+            triangles[0].p[1] = interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
+            triangles[0].p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+            set_triangle_normal(triangles);
+            return 1;
         }
         // Two above at same edge, others under
         if (values[i] > isovalue && values[(i + 1) % 4] > isovalue &&
             values[(i + 2) % 4] < isovalue && values[(i + 3) % 4] > isovalue) {
-            //triangle 1
-            interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 2) % 4], values[(i + 1) % 4], values[(i + 2) % 4]);
-            interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
-            interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+
+            triangles[0].p[0] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 2) % 4], values[(i + 1) % 4], values[(i + 2) % 4]);
+            triangles[0].p[1] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
+            triangles[0].p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
             
-            interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
-            interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
-            interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+            triangles[1].p[0] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
+            triangles[1].p[1] = interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
+            triangles[1].p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+            set_triangle_normal(triangles);
+            set_triangle_normal(triangles + 1);
+            return 2;
         }
         // If the opposite sides are above, others under
         if (values[i] > isovalue && values[(i + 1) % 4] < isovalue &&
             values[(i + 2) % 4] > isovalue && values[(i + 3) % 4] < isovalue) {
-                
+            
+            // right triangle (in assignment)
+            triangles[0].p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
+            triangles[0].p[1] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
+            triangles[0].p[2] = interpolate_points(isovalue, points[(i + 2) % 4], points[(i + 3) % 4], values[(i + 2) % 4], values[(i + 3) % 4]);
+
+            // left triangle (in assignment)
+            triangles[1].p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
+            triangles[1].p[1] = interpolate_points(isovalue, points[(i + 2) % 4], points[(i + 3) % 4], values[(i + 2) % 4], values[(i + 3) % 4]);
+            triangles[1].p[2] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 2) % 4], values[(i + 1) % 4], values[(i + 2) % 4]);
+            set_triangle_normal(triangles);
+            set_triangle_normal(triangles + 1);
+            return 2;
         }
-
     }
-
     return 0;
 }
 
@@ -91,12 +114,12 @@ int
 generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue)
 {
     int n = 0;
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 1, 3, 7);
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 1, 5, 7);
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 4, 5, 7);
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 4, 6, 7);
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 2, 3, 7);
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 2, 6, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 1, 3, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 1, 5, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 4, 5, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 4, 6, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 2, 3, 7);
+    n += generate_tetrahedron_triangles(triangles + n, isovalue, c, 0, 2, 6, 7);
 
     return n;
 }
