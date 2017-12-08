@@ -22,126 +22,121 @@
 static vec3
 interpolate_points(unsigned char isovalue, vec3 p1, vec3 p2, unsigned char v1, unsigned char v2)
 {
-    /* Initially, simply return the midpoint between p1 and p2.
-       So no real interpolation is done yet */
+    // Calculate the ratio of the distances from both points to the isovalue
+    float ratio = ((float)isovalue - (float)v2) / ((float)v1 - (float)v2);
 
-    return v3_add(v3_multiply(p1, 0.5), v3_multiply(p2, 0.5));
+    return v3_add(v3_multiply(p1, ratio), v3_multiply(p2, 1.0 - ratio));
 }
 
-
+// Create a surface normal from a triangle
 void set_triangle_normal(triangle* t) {
-    vec3 norm = v3_normalize(v3_crossprod(v3_subtract(t->p[1], t->p[0]),
-                                          v3_subtract(t->p[0], t->p[0])));
+    vec3 norm = v3_normalize(v3_crossprod(v3_subtract(t->p[0], t->p[2]),
+                                          v3_subtract(t->p[1], t->p[2])));
     t->n[0] = norm;
     t->n[1] = norm;
     t->n[2] = norm;
 }
 
 
-static int
-generate_triangle_corner(triangle *triangles, vec3 *points, double *values, unsigned char isovalue) {
-    // Iterate over the corners of the tetrahedron
-    for (int i = 0; i < 4; i++) {
-        // // Only one under, others above
-        if (values[i] < isovalue && values[(i + 1) % 4] > isovalue &&
-            values[(i + 2) % 4] > isovalue && values[(i + 3) % 4] > isovalue) {
-
-            triangles->p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
-            triangles->p[1] = interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
-            triangles->p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
-            set_triangle_normal(triangles);
-            triangles++;
-            return 1;
-        }
-    }
-    return 0;
+static triangle
+generate_triangle_corner(unsigned char isovalue, cell c, int v0, int v1, int v2, int v3) {
+    triangle t;
+    t.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+    t.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+    t.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+    set_triangle_normal(&t);
+    return t;
 }
 
-static int
-generate_triangle_edge(triangle *triangles, vec3 *points, double *values, unsigned char isovalue) {
-    for (int i = 0; i < 4; i++) {
-    // Two above at same edge, others under
-        if (values[i] > isovalue && values[(i + 1) % 4] > isovalue &&
-            values[(i + 2) % 4] < isovalue && values[(i + 3) % 4] > isovalue) {
-
-            triangles->p[0] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 2) % 4], values[(i + 1) % 4], values[(i + 2) % 4]);
-            triangles->p[1] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
-            triangles->p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
-            set_triangle_normal(triangles);
-            triangles++;
-
-            triangles->p[0] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 3) % 4], values[(i + 1) % 4], values[(i + 3) % 4]);
-            triangles->p[1] = interpolate_points(isovalue, points[i], points[(i + 2) % 4], values[i], values[(i + 2) % 4]);
-            triangles->p[2] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
-            set_triangle_normal(triangles);
-            triangles++;
-            return 2;
-        }
-    }
-    return 0;
-}
-
-static int
-generate_triangle_square(triangle *triangles, vec3 *points, double *values, unsigned char isovalue) {
-    // Iterate over the corners of the tetrahedron
-    for (int i = 0; i < 4; i++) {
-        // // If the opposite sides are above, others under
-        if (values[i] > isovalue && values[(i + 1) % 4] < isovalue &&
-            values[(i + 2) % 4] > isovalue && values[(i + 3) % 4] < isovalue) {
-
-            // right triangle (in assignment)
-            triangles->p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
-            triangles->p[1] = interpolate_points(isovalue, points[i], points[(i + 3) % 4], values[i], values[(i + 3) % 4]);
-            triangles->p[2] = interpolate_points(isovalue, points[(i + 2) % 4], points[(i + 3) % 4], values[(i + 2) % 4], values[(i + 3) % 4]);
-            set_triangle_normal(triangles);
-            triangles++;
-
-            // left triangle (in assignment)
-            triangles->p[0] = interpolate_points(isovalue, points[i], points[(i + 1) % 4], values[i], values[(i + 1) % 4]);
-            triangles->p[1] = interpolate_points(isovalue, points[(i + 2) % 4], points[(i + 3) % 4], values[(i + 2) % 4], values[(i + 3) % 4]);
-            triangles->p[2] = interpolate_points(isovalue, points[(i + 1) % 4], points[(i + 2) % 4], values[(i + 1) % 4], values[(i + 2) % 4]);
-            set_triangle_normal(triangles);
-            triangles++;
-            return 2;
-        }
-    }
-    return 0;
+static triangle
+generate_triangle_square(unsigned char isovalue, cell c, int v0, int v1, int v2, int v3) {
+    triangle t;
+    t.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+    t.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+    t.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+    set_triangle_normal(&t);
+    return t;
 }
 
 static int
 generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell c, int v0, int v1, int v2, int v3)
 {
-    vec3 points[] = {c.p[v0], c.p[v1], c.p[v2], c.p[v3]};
-    double values[] = {c.value[v0], c.value[v1], c.value[v2], c.value[v3]};
-    int n = 0;
-    // save the starting position of the triangles array
-    triangle *t = triangles;
-    n += generate_triangle_corner(triangles, points, values, isovalue);
-    n += generate_triangle_edge(triangles, points, values, isovalue);
-    n += generate_triangle_square(triangles, points, values, isovalue);
-    // point the triangle array back to its start
-    triangles = t;
-    printf("n: %i\n", n);
-    return n;
+    unsigned char mask = 0x0;
+
+    // Create a mask for differentiating between triangle configurations
+    if (isovalue < c.value[v0])
+        mask = mask | 0x1;
+    if (isovalue < c.value[v1])
+        mask = mask | 0x2;
+    if (isovalue < c.value[v2])
+        mask = mask | 0x4;
+    if (isovalue < c.value[v3])
+        mask = mask | 0x8;
+    
+    // 0000 and 1111
+    if (mask == 0x0 || mask == 0xF) { 
+        return 0;
+    }
+    // 0001 and 1110
+    if (mask == 0x1 || mask == 0xE) { 
+        *triangles = generate_triangle_corner(isovalue, c, v0, v1, v2, v3);
+        return 1;
+    }
+    // 0010 and 1101
+    if (mask == 0x2 || mask == 0xD) { 
+        *triangles = generate_triangle_corner(isovalue, c, v1, v0, v2, v3);
+        return 1;
+    }
+    // 0011 and 1100
+    if (mask == 0x3 || mask == 0xC) {
+        *triangles = generate_triangle_square(isovalue, c, v2, v0, v3, v1);
+        *(triangles+1) = generate_triangle_square(isovalue, c, v3, v1, v2, v0);
+        return 2;
+    }
+    // 0100 and 1011
+    if (mask == 0x4 || mask == 0xB) {
+        *triangles = generate_triangle_corner(isovalue, c, v2, v0, v1, v3);
+        return 1;
+    }
+    // 0101 and 1010
+    if (mask == 0x5 || mask == 0xA) {
+        *triangles = generate_triangle_square(isovalue, c, v2, v3, v0, v1);
+        *(triangles+1) = generate_triangle_square(isovalue, c, v3, v2, v1, v0);
+        return 2;
+    }
+    // 0110 and 1001
+    if (mask == 0x6 || mask == 0x9) {
+        *triangles = generate_triangle_square(isovalue, c, v3, v1, v0, v2);
+        *(triangles+1) = generate_triangle_square(isovalue, c, v1, v3, v2, v0);
+        return 2;
+    }
+    // 0111 and 0100
+    if (mask == 0x7 || mask == 0x8) {
+        *triangles = generate_triangle_corner(isovalue, c, v3, v0, v1, v2);
+        return 1;
+    }
+    return 0;
 }
 
 int
 generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue)
 {
+    // The tetrahedron representation
+    int t[6][4] = {
+        {0, 1, 3, 7}, // T1
+        {0, 2, 6, 7}, // T2
+        {0, 1, 5, 7}, // T3
+        {0, 2, 3, 7}, // T4
+        {0, 4, 5, 7}, // T5
+        {0, 4, 6, 7}  // T6
+    };
+    
     int n = 0;
-    // T1
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 1, 3, 7);
-    // T2
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 2, 6, 7);
-    // T3
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 1, 5, 7);
-    // T4
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 2, 3, 7);
-    // T5
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 4, 5, 7);
-    // T6
-    n += generate_tetrahedron_triangles(triangles, isovalue, c, 0, 4, 6, 7);
-
+    // Loop over the 6 tetrahedron variants
+    for (int i = 0; i < 6; i++) {
+        n += generate_tetrahedron_triangles(triangles + n, isovalue, c,
+                                            t[i][0], t[i][1],t[i][2],t[i][3]);
+    }
     return n;
 }
 

@@ -11,6 +11,7 @@ typedef struct
 }
 triangle;
 
-int generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue);
+int
+generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue);
 
 #endif

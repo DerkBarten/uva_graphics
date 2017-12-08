@@ -194,6 +194,7 @@ void FillArrayWithIsosurface(void)
     triangle t;
     triangle triangles[12];
 
+    // Loop over the volume
     for (int i = 0; i < nx - 1; i++)
     {
         for (int j = 0; j < ny - 1; j++)
@@ -203,8 +204,10 @@ void FillArrayWithIsosurface(void)
                c = get_cell(i, j, k); 
                n = generate_cell_triangles(triangles, c, isovalue);
 
+                // Loop over the found triangles
                for (int l = 0; l < n; l++) {
                    t = triangles[l];
+                   // Loop over the vertices of the triangles
                    for (int m = 0; m < 3; m++) {
                        AddVertexToArray(t.p[m], t.n[m]);
                    }

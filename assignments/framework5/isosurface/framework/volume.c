@@ -49,6 +49,7 @@ cell
 get_cell(int i, int j, int k)
 {
     cell c;
+    // Fill in the vertices of the cell
     c.p[0] = voxel2vec3(i, j, k);
     c.p[1] = voxel2vec3(i + 1, j, k);
     c.p[2] = voxel2vec3(i, j + 1, k);
@@ -58,6 +59,7 @@ get_cell(int i, int j, int k)
     c.p[6] = voxel2vec3(i, j + 1, k + 1);
     c.p[7] = voxel2vec3(i + 1, j + 1, k + 1);
 
+    // Fill in the values of the voxels
     c.value[0] = volume[voxel2idx(i, j, k)];
     c.value[1] = volume[voxel2idx(i + 1, j, k)];
     c.value[2] = volume[voxel2idx(i, j + 1, k)];
