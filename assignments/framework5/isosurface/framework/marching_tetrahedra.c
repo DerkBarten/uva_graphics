@@ -14,6 +14,7 @@
 #include <assert.h>
 #include "marching_tetrahedra.h"
 
+
 /* Compute a linearly interpolated position where an isosurface cuts
    an edge between two vertices (p1 and p2), each with their own
    scalar value (v1 and v2) */
@@ -67,7 +68,7 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
             return 1;
         }
 
-        // // Two above at same edge, others under
+        // // // Two above at same edge, others under
         // if (values[i] > isovalue && values[(i + 1) % 4] > isovalue &&
         //     values[(i + 2) % 4] < isovalue && values[(i + 3) % 4] > isovalue) {
 
@@ -82,7 +83,7 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
         //     set_triangle_normal(triangles + 1);
         //     return 2;
         // }
-        // // If the opposite sides are above, others under
+        // // // If the opposite sides are above, others under
         // if (values[i] > isovalue && values[(i + 1) % 4] < isovalue &&
         //     values[(i + 2) % 4] > isovalue && values[(i + 3) % 4] < isovalue) {
         //     // TODO: renders nothing
@@ -135,3 +136,4 @@ generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue)
 
     return n;
 }
+
