@@ -46,13 +46,18 @@ b2World *world;
 b2Body *player;
 b2Body *finish;
 
-int current_world = 0;
+// The current level of the game
+int current_level = 0;
+// Specifies if the player reached the finish
 bool is_finished = false;
-bool is_active = false;
+// Specifies if the level paused
+bool is_paused = false;
 
+// Points used for the user defined polygons
 point_t points[4];
 int point_count = 0;
 
+/* *Create a b2PolygonShape from a list of poly's */
 void load_polyshape(b2PolygonShape *shape, poly_t *poly) {
     b2Vec2 *vertices = new b2Vec2[poly->num_verts];
     for (unsigned int i = 0; i < poly->num_verts; i++) {
@@ -62,63 +67,63 @@ void load_polyshape(b2PolygonShape *shape, poly_t *poly) {
     delete vertices;
 }
 
+/* Create the player object */
 void create_player(point_t start) {
-     // Create the ball
+    // Body definition
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position.Set(start.x, start.y);
-    player = world->CreateBody(&bodyDef);
-
+    
+    // Shape
     b2CircleShape dynamicCircle;
     dynamicCircle.m_radius = 0.15f;
 
+    // Fixture
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &dynamicCircle;
     fixtureDef.density = 1.0f;
     fixtureDef.friction = 0.3f;
+
+    player = world->CreateBody(&bodyDef);
     player->CreateFixture(&fixtureDef);
 }
 
+/* Create the finish of the level */
 void create_finish(point_t end) {
+    // Body definition
     b2BodyDef bodyDef;
     bodyDef.position.Set(end.x, end.y);
+
+    // Shape
     b2PolygonShape shape;
     shape.SetAsBox(0.05,0.05);
+
     finish = world->CreateBody(&bodyDef);
     finish->CreateFixture(&shape, 0.0f);
 }
 
+/* Create a polygon for the level */
 void create_polygon(poly_t *poly) {
+    // Body definition
     b2BodyDef bodyDef;
     if (poly->is_dynamic) {
         bodyDef.type = b2_dynamicBody;
     }
     bodyDef.position.Set(poly->position.x, poly->position.y);
+
+    // Shape
     b2PolygonShape shape;
-    
     load_polyshape(&shape, poly);
 
     b2Body* body = world->CreateBody(&bodyDef);
     body->CreateFixture(&shape, 1.0f);
 }
 
-void create_point(point_t position) {
-    b2BodyDef bodyDef;
-    bodyDef.type = b2_staticBody;
-    bodyDef.position.Set(position.x, position.y);
-
-    b2CircleShape circle;
-    circle.m_radius = 0.02f;
-
-    b2Body *body = world->CreateBody(&bodyDef);
-    body->CreateFixture(&circle, 0.0f);
-}
-
 /*
  * Load a given world, i.e. read the world from the `levels' data structure and
  * convert it into a Box2D world.
  */
-void load_world(unsigned int level_number)
+void load_level(unsigned int level_number)
 {
     if (level_number >= num_levels)
     {
@@ -142,9 +147,11 @@ void draw_polygon(b2Body *body, GLfloat *color) {
 
     glColor3f(color[0], color[1], color[2]);
     glPushMatrix();
+        // Perform a rigid body motion
         glTranslatef(body->GetPosition().x, body->GetPosition().y, 0);
         glRotatef(body->GetAngle() * 180.0/M_PI, 0,0,1);
         glBegin(GL_POLYGON);
+            // Add the vertices to the opengl buffer
             for (int i = 0; i < count; i++) {
                 b2Vec2 vertex = shape->GetVertex(i);
                 glVertex2f(vertex.x, vertex.y);
@@ -158,6 +165,7 @@ void draw_circle(b2Body *circle){
 	int triangleAmount = 20;
     GLfloat radius = circle->GetFixtureList()->GetShape()->m_radius;
 
+    // Don't draw a circle if it doesn't have a radius
     if (radius <= 0.01f) {
         return;
     }
@@ -168,18 +176,17 @@ void draw_circle(b2Body *circle){
     
     glColor3f(1, 0, 0);
 	glBegin(GL_TRIANGLE_FAN);
-		glVertex2f(x, y); // center of circle
+        // Circle center
+		glVertex2f(x, y);
 		for(i = 0; i <= triangleAmount;i++) { 
-			glVertex2f(
-		            x + (radius * cos(i *  twicePi / triangleAmount)), 
-			    y + (radius * sin(i * twicePi / triangleAmount))
-			);
+			glVertex2f(x + (radius * cos(i *  twicePi / triangleAmount)), 
+			           y + (radius * sin(i * twicePi / triangleAmount)));
 		}
 	glEnd();
 }
 
 void go_to_level(int level_number) {
-    is_active = false;
+    is_paused = false;
     b2Body *next = world->GetBodyList();
     b2Body *previous = next; 
     next = next->GetNext();
@@ -191,7 +198,7 @@ void go_to_level(int level_number) {
     }
     world->DestroyBody(previous);
     is_finished = false;
-    load_world(level_number);
+    load_level(level_number);
 }
 
 /*
@@ -216,21 +223,25 @@ void draw(void)
         draw_circle(body);
         body = body->GetNext();
     }
+    color[1] = 0;
+    color[2] = 1;
+    draw_polygon(finish, color);
 
     // Show rendered frame
     glutSwapBuffers();
 
     if (is_finished) {
-        current_world++;
-        go_to_level(current_world);
+        current_level++;
+        if (current_level >= 5) {
+            printf("Congratulations, you have completed the game!\n");
+            exit(0);
+        } else{
+            go_to_level(current_level);
+        }
     }
 
-    float32 timeStep = 1.0f / 60.0f;
-    int32 velocityIterations = 6;
-    int32 positionIterations = 2;
-
-    if (is_active)
-        world->Step(timeStep, velocityIterations, positionIterations);
+    if (is_paused)
+        world->Step(1.0f / 60.0f, 6, 2);
 
     // Display fps in window title.
     if (frametime >= 1000)
@@ -267,11 +278,13 @@ void key_pressed(unsigned char key, int x, int y)
         case 'q':
             exit(0);
             break;
+        // Toggle pause
         case ' ':
-            is_active = true;
+            is_paused = true;
             break;
+        // Restart the level
         case 'r':
-            go_to_level(current_world);
+            go_to_level(current_level);
             break;
         default:
             break;
@@ -283,7 +296,6 @@ void key_pressed(unsigned char key, int x, int y)
  */
 void mouse_clicked(int button, int state, int x, int y)
 {
-    
     if (button == 0 && state == 0) {
         point_t point;
         point.x = x;
@@ -298,12 +310,9 @@ void mouse_clicked(int button, int state, int x, int y)
             poly.verts = points;
             poly.position.x = 0;
             poly.position.y = 0;
-            printf("px %f py %f\n", poly.position.x, poly.position.y);
             create_polygon(&poly);
             point_count = 0;
         }
-        //create_point(point);
-        
     }
 }
 
@@ -353,7 +362,7 @@ int main(int argc, char **argv)
     world = &wrld;
     MyContactListener listener;
     world->SetContactListener(&listener);
-    load_world(current_world);
+    load_level(current_level);
 
     last_time = glutGet(GLUT_ELAPSED_TIME);
     frame_count = 0;
