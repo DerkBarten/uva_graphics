@@ -35,7 +35,9 @@ int frame_count;
 unsigned int num_levels;
 level_t *levels;
 b2World *world;
-b2Body * player;
+b2Body *player;
+b2Body *finish;
+int current_world = 0;
 
 void load_polyshape(b2PolygonShape *shape, poly_t *poly) {
     b2Vec2 vertices[20];
@@ -62,9 +64,17 @@ void create_player(point_t start) {
     player->CreateFixture(&fixtureDef);
 }
 
+void create_finish(point_t end) {
+    b2BodyDef bodyDef;
+    bodyDef.position.Set(end.x, end.y);
+    b2PolygonShape shape;
+    shape.SetAsBox(0.05,0.05);
+    finish = world->CreateBody(&bodyDef);
+    finish->CreateFixture(&shape, 0.0f);
+}
+
 void create_polygon(poly_t *poly) {
     b2BodyDef bodyDef;
-    bodyDef.type = b2_staticBody;
     bodyDef.position.Set(poly->position.x, poly->position.y);
     b2PolygonShape shape;
     
@@ -94,6 +104,7 @@ void load_world(unsigned int level_number)
         create_polygon(poly);
     }
     create_player(level->start);
+    create_finish(level->end);
 }
 
 void draw_polygon(b2PolygonShape *poly, b2Vec2 center, float angle) {
@@ -111,6 +122,19 @@ void draw_polygon(b2PolygonShape *poly, b2Vec2 center, float angle) {
     glPopMatrix();
 }
 
+void draw_finish() {
+    glColor3f(0, 0, 1);
+    glPushMatrix();
+        glTranslatef(finish->GetPosition().x, finish->GetPosition().y, 0);
+        glRotatef(finish->GetAngle() * 180.0/M_PI, 0,0,1);
+        glBegin(GL_POLYGON);
+            for (int i = 0; i < 4; i++) {
+                b2Vec2 vertex = ((b2PolygonShape *)finish->GetFixtureList()->GetShape())->GetVertex(i);
+                glVertex2f(vertex.x, vertex.y);
+            }
+        glEnd();
+    glPopMatrix();
+}
 
 void draw_player(){
 	int i;
@@ -156,6 +180,8 @@ void draw(void)
         body = body->GetNext();
     }
     draw_player();
+    draw_finish();
+
     // Show rendered frame
     glutSwapBuffers();
 
@@ -258,7 +284,7 @@ int main(int argc, char **argv)
     b2Vec2 gravity(0.0f, - 10.0f);
     b2World wrld(gravity);
     world = &wrld;
-    load_world(1);
+    load_world(current_world);
 
     last_time = glutGet(GLUT_ELAPSED_TIME);
     frame_count = 0;
