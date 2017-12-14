@@ -24,6 +24,7 @@
 #include <math.h>
 
 #include "levels.h"
+#include "main.h"
 
 unsigned int reso_x = 800, reso_y = 600; // Window size in pixels
 const float world_x = 8.f, world_y = 6.f; // Level (world) size in meters
@@ -31,20 +32,34 @@ const float world_x = 8.f, world_y = 6.f; // Level (world) size in meters
 int last_time;
 int frame_count;
 
+point_t reso_to_world(point_t reso_point) {
+    point_t world_point;
+    world_point.x = (reso_point.x / reso_x) * world_x;
+    world_point.y = world_y - (reso_point.y / reso_y) * world_y;
+    return world_point;
+}
+
 // Information about the levels loaded from files will be available in these.
 unsigned int num_levels;
 level_t *levels;
 b2World *world;
 b2Body *player;
 b2Body *finish;
+
 int current_world = 0;
+bool is_finished = false;
+bool is_active = false;
+
+point_t points[4];
+int point_count = 0;
 
 void load_polyshape(b2PolygonShape *shape, poly_t *poly) {
-    b2Vec2 vertices[20];
+    b2Vec2 *vertices = new b2Vec2[poly->num_verts];
     for (unsigned int i = 0; i < poly->num_verts; i++) {
         vertices[i].Set(poly->verts[i].x, poly->verts[i].y);
     }
-    shape->Set(vertices, 3);
+    shape->Set(vertices, poly->num_verts);
+    delete vertices;
 }
 
 void create_player(point_t start) {
@@ -55,7 +70,7 @@ void create_player(point_t start) {
     player = world->CreateBody(&bodyDef);
 
     b2CircleShape dynamicCircle;
-    dynamicCircle.m_radius = 0.25f;
+    dynamicCircle.m_radius = 0.15f;
 
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &dynamicCircle;
@@ -75,6 +90,9 @@ void create_finish(point_t end) {
 
 void create_polygon(poly_t *poly) {
     b2BodyDef bodyDef;
+    if (poly->is_dynamic) {
+        bodyDef.type = b2_dynamicBody;
+    }
     bodyDef.position.Set(poly->position.x, poly->position.y);
     b2PolygonShape shape;
     
@@ -82,6 +100,18 @@ void create_polygon(poly_t *poly) {
 
     b2Body* body = world->CreateBody(&bodyDef);
     body->CreateFixture(&shape, 1.0f);
+}
+
+void create_point(point_t position) {
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_staticBody;
+    bodyDef.position.Set(position.x, position.y);
+
+    b2CircleShape circle;
+    circle.m_radius = 0.02f;
+
+    b2Body *body = world->CreateBody(&bodyDef);
+    body->CreateFixture(&circle, 0.0f);
 }
 
 /*
@@ -97,7 +127,6 @@ void load_world(unsigned int level_number)
         printf("Warning: level %d does not exist.\n", level_number);
         return;
     }
-
     level_t *level = levels + level_number;
     for (unsigned int i = 0; i < level->num_polygons; i++) {
         poly_t *poly = level->polygons + i;
@@ -107,44 +136,35 @@ void load_world(unsigned int level_number)
     create_finish(level->end);
 }
 
-void draw_polygon(b2PolygonShape *poly, b2Vec2 center, float angle) {
-    int count = poly->GetVertexCount();
-    glColor3f(0, 1, 0);
+void draw_polygon(b2Body *body, GLfloat *color) {
+    b2PolygonShape *shape = (b2PolygonShape *)body->GetFixtureList()->GetShape();
+    int count = shape->GetVertexCount();
+
+    glColor3f(color[0], color[1], color[2]);
     glPushMatrix();
-        glTranslatef(center.x, center.y, 0);
-        glRotatef(angle * 180.0/M_PI, 0,0,1);
+        glTranslatef(body->GetPosition().x, body->GetPosition().y, 0);
+        glRotatef(body->GetAngle() * 180.0/M_PI, 0,0,1);
         glBegin(GL_POLYGON);
             for (int i = 0; i < count; i++) {
-                b2Vec2 vertex = poly->GetVertex(i);
+                b2Vec2 vertex = shape->GetVertex(i);
                 glVertex2f(vertex.x, vertex.y);
             }
         glEnd();
     glPopMatrix();
 }
 
-void draw_finish() {
-    glColor3f(0, 0, 1);
-    glPushMatrix();
-        glTranslatef(finish->GetPosition().x, finish->GetPosition().y, 0);
-        glRotatef(finish->GetAngle() * 180.0/M_PI, 0,0,1);
-        glBegin(GL_POLYGON);
-            for (int i = 0; i < 4; i++) {
-                b2Vec2 vertex = ((b2PolygonShape *)finish->GetFixtureList()->GetShape())->GetVertex(i);
-                glVertex2f(vertex.x, vertex.y);
-            }
-        glEnd();
-    glPopMatrix();
-}
-
-void draw_player(){
+void draw_circle(b2Body *circle){
 	int i;
 	int triangleAmount = 20;
-	
-	//GLfloat radius = 0.8f; //radius
+    GLfloat radius = circle->GetFixtureList()->GetShape()->m_radius;
+
+    if (radius <= 0.01f) {
+        return;
+    }
+
     GLfloat twicePi = 2.0f * M_PI;
-    GLfloat x = player->GetPosition().x;
-    GLfloat y = player->GetPosition().y;
-    GLfloat radius = player->GetFixtureList()->GetShape()->m_radius;
+    GLfloat x = circle->GetPosition().x;
+    GLfloat y = circle->GetPosition().y;
     
     glColor3f(1, 0, 0);
 	glBegin(GL_TRIANGLE_FAN);
@@ -156,6 +176,22 @@ void draw_player(){
 			);
 		}
 	glEnd();
+}
+
+void go_to_level(int level_number) {
+    is_active = false;
+    b2Body *next = world->GetBodyList();
+    b2Body *previous = next; 
+    next = next->GetNext();
+
+    while (next != NULL) {
+        world->DestroyBody(previous);
+        previous = next;
+        next = next->GetNext();
+    }
+    world->DestroyBody(previous);
+    is_finished = false;
+    load_world(level_number);
 }
 
 /*
@@ -173,23 +209,28 @@ void draw(void)
     glClear(GL_COLOR_BUFFER_BIT);
 
     b2Body *body = world->GetBodyList();
+    GLfloat color[3] = {0, 1, 0};
     while(body != NULL)
     {
-        if (body != player)
-            draw_polygon((b2PolygonShape *)body->GetFixtureList()->GetShape(), body->GetPosition(), body->GetAngle());
+        draw_polygon(body, color);
+        draw_circle(body);
         body = body->GetNext();
     }
-    draw_player();
-    draw_finish();
 
     // Show rendered frame
     glutSwapBuffers();
+
+    if (is_finished) {
+        current_world++;
+        go_to_level(current_world);
+    }
 
     float32 timeStep = 1.0f / 60.0f;
     int32 velocityIterations = 6;
     int32 positionIterations = 2;
 
-    world->Step(timeStep, velocityIterations, positionIterations);
+    if (is_active)
+        world->Step(timeStep, velocityIterations, positionIterations);
 
     // Display fps in window title.
     if (frametime >= 1000)
@@ -226,7 +267,12 @@ void key_pressed(unsigned char key, int x, int y)
         case 'q':
             exit(0);
             break;
-        // Add any keys you want to use, either for debugging or gameplay.
+        case ' ':
+            is_active = true;
+            break;
+        case 'r':
+            go_to_level(current_world);
+            break;
         default:
             break;
     }
@@ -237,7 +283,28 @@ void key_pressed(unsigned char key, int x, int y)
  */
 void mouse_clicked(int button, int state, int x, int y)
 {
-
+    
+    if (button == 0 && state == 0) {
+        point_t point;
+        point.x = x;
+        point.y = y;
+        points[point_count] = reso_to_world(point);
+        point_count++;
+        
+        if (point_count == 4) {
+            poly_t poly;
+            poly.is_dynamic = true;
+            poly.num_verts = 4;
+            poly.verts = points;
+            poly.position.x = 0;
+            poly.position.y = 0;
+            printf("px %f py %f\n", poly.position.x, poly.position.y);
+            create_polygon(&poly);
+            point_count = 0;
+        }
+        //create_point(point);
+        
+    }
 }
 
 /*
@@ -284,6 +351,8 @@ int main(int argc, char **argv)
     b2Vec2 gravity(0.0f, - 10.0f);
     b2World wrld(gravity);
     world = &wrld;
+    MyContactListener listener;
+    world->SetContactListener(&listener);
     load_world(current_world);
 
     last_time = glutGet(GLUT_ELAPSED_TIME);
@@ -291,4 +360,13 @@ int main(int argc, char **argv)
     glutMainLoop();
 
     return 0;
+}
+
+void MyContactListener::BeginContact(b2Contact* contact) {
+    b2Body *bodyA = contact->GetFixtureA()->GetBody();
+    b2Body *bodyB = contact->GetFixtureB()->GetBody(); 
+    if ((bodyA == finish &&  bodyB == player) ||
+        (bodyA == player && bodyB == finish)) {
+        is_finished = true;
+    }
 }
