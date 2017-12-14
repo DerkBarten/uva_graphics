@@ -12,7 +12,7 @@ UNAME=$(shell uname -s)
 ifeq ($(UNAME), Darwin)
 LDFLAGS=-framework Box2D -framework GLUT -framework OpenGL -framework Cocoa -framework GLEW
 else
-LDFLAGS= -lGL -lglut -lBox2D -lGLEW
+LDFLAGS= -lGL -lglut -lBox2D -lGLEW -lm
 endif
 
 # Do some substitution to get a list of .o files from the given .cpp files.

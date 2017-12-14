@@ -21,6 +21,7 @@
 #endif
 
 #include <Box2D/Box2D.h>
+#include <math.h>
 
 #include "levels.h"
 
@@ -34,6 +35,7 @@ int frame_count;
 unsigned int num_levels;
 level_t *levels;
 b2World *world;
+b2Body * player;
 
 void load_polyshape(b2PolygonShape *shape, poly_t *poly) {
     b2Vec2 vertices[20];
@@ -48,11 +50,10 @@ void create_player(point_t start) {
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position.Set(start.x, start.y);
-    b2Body *player = world->CreateBody(&bodyDef);
+    player = world->CreateBody(&bodyDef);
 
     b2CircleShape dynamicCircle;
-    dynamicCircle.m_p.Set(start.x, start.y);
-    dynamicCircle.m_radius = 0.5f;
+    dynamicCircle.m_radius = 0.25f;
 
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &dynamicCircle;
@@ -63,6 +64,7 @@ void create_player(point_t start) {
 
 void create_polygon(poly_t *poly) {
     b2BodyDef bodyDef;
+    bodyDef.type = b2_staticBody;
     bodyDef.position.Set(poly->position.x, poly->position.y);
     b2PolygonShape shape;
     
@@ -85,34 +87,18 @@ void load_world(unsigned int level_number)
         printf("Warning: level %d does not exist.\n", level_number);
         return;
     }
-    // More effient than copying the level
-    level_t *level = levels + level_number;
-    printf("Level Start: %f %f\n", level->start.x, level->start.y);
 
+    level_t *level = levels + level_number;
     for (unsigned int i = 0; i < level->num_polygons; i++) {
         poly_t *poly = level->polygons + i;
         create_polygon(poly);
     }
-    //create_player(level->start);
-   
-
-    float32 timeStep = 1.0f / 60.0f;
-    int32 velocityIterations = 6;
-    int32 positionIterations = 2;
-    for (int32 i = 0; i < 100; ++i)
-    {
-        world->Step(timeStep, velocityIterations, positionIterations);
-        // b2Vec2 position = player->GetPosition();
-        // float32 angle = player->GetAngle();
-        // printf("%4.2f %4.2f %4.2f\n", position.x, position.y, angle);
-    }
-    // Create a Box2D world and populate it with all bodies for this level
-    // (including the ball).
+    create_player(level->start);
 }
 
 void draw_polygon(b2PolygonShape *poly, b2Vec2 center, float angle) {
     int count = poly->GetVertexCount();
-    glColor3f(1,0,0);
+    glColor3f(0, 1, 0);
     glPushMatrix();
         glTranslatef(center.x, center.y, 0);
         glRotatef(angle * 180.0/M_PI, 0,0,1);
@@ -123,6 +109,29 @@ void draw_polygon(b2PolygonShape *poly, b2Vec2 center, float angle) {
             }
         glEnd();
     glPopMatrix();
+}
+
+
+void draw_player(){
+	int i;
+	int triangleAmount = 20;
+	
+	//GLfloat radius = 0.8f; //radius
+    GLfloat twicePi = 2.0f * M_PI;
+    GLfloat x = player->GetPosition().x;
+    GLfloat y = player->GetPosition().y;
+    GLfloat radius = player->GetFixtureList()->GetShape()->m_radius;
+    
+    glColor3f(1, 0, 0);
+	glBegin(GL_TRIANGLE_FAN);
+		glVertex2f(x, y); // center of circle
+		for(i = 0; i <= triangleAmount;i++) { 
+			glVertex2f(
+		            x + (radius * cos(i *  twicePi / triangleAmount)), 
+			    y + (radius * sin(i * twicePi / triangleAmount))
+			);
+		}
+	glEnd();
 }
 
 /*
@@ -142,12 +151,19 @@ void draw(void)
     b2Body *body = world->GetBodyList();
     while(body != NULL)
     {
-        draw_polygon((b2PolygonShape *)body->GetFixtureList()->GetShape(), body->GetPosition(), body->GetAngle());
+        if (body != player)
+            draw_polygon((b2PolygonShape *)body->GetFixtureList()->GetShape(), body->GetPosition(), body->GetAngle());
         body = body->GetNext();
     }
-
+    draw_player();
     // Show rendered frame
     glutSwapBuffers();
+
+    float32 timeStep = 1.0f / 60.0f;
+    int32 velocityIterations = 6;
+    int32 positionIterations = 2;
+
+    world->Step(timeStep, velocityIterations, positionIterations);
 
     // Display fps in window title.
     if (frametime >= 1000)
@@ -242,7 +258,7 @@ int main(int argc, char **argv)
     b2Vec2 gravity(0.0f, - 10.0f);
     b2World wrld(gravity);
     world = &wrld;
-    load_world(3);
+    load_world(1);
 
     last_time = glutGet(GLUT_ELAPSED_TIME);
     frame_count = 0;
