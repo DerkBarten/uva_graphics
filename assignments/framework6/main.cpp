@@ -10,6 +10,8 @@
  * (always fill in these fields before submitting!!)
  */
 
+// TODO: gebruik VBO
+
 #include <cstdio>
 
 #ifdef __APPLE__
@@ -47,7 +49,7 @@ b2Body *player;
 b2Body *finish;
 
 // The current level of the game
-int current_level = 0;
+int current_level = 3;
 // Specifies if the player reached the finish
 bool is_finished = false;
 // Specifies if the level paused
@@ -103,7 +105,7 @@ void create_finish(point_t end) {
 }
 
 /* Create a polygon for the level */
-void create_polygon(poly_t *poly) {
+b2Body* create_polygon(poly_t *poly) {
     // Body definition
     b2BodyDef bodyDef;
     if (poly->is_dynamic) {
@@ -117,6 +119,7 @@ void create_polygon(poly_t *poly) {
 
     b2Body* body = world->CreateBody(&bodyDef);
     body->CreateFixture(&shape, 1.0f);
+    return body;
 }
 
 /*
@@ -127,16 +130,60 @@ void load_level(unsigned int level_number)
 {
     if (level_number >= num_levels)
     {
-        // Note that level is unsigned but we still use %d so -1 is shown as
-        // such.
         printf("Warning: level %d does not exist.\n", level_number);
         return;
     }
+
+
     level_t *level = levels + level_number;
+    // Array of b2Body pointers
+    b2Body **bodies = new b2Body*[level->num_polygons];
+
     for (unsigned int i = 0; i < level->num_polygons; i++) {
         poly_t *poly = level->polygons + i;
-        create_polygon(poly);
+        bodies[i] = create_polygon(poly);
     }
+
+    for (unsigned int i = 0; i < level->num_joints; i++) {
+        // Create the revolute joints
+        if (level->joints[i].joint_type == JOINT_REVOLUTE) {
+            b2RevoluteJointDef jointDef;
+            b2Body* bodyA = bodies[level->joints[i].objectA];
+            b2Body* bodyB = bodies[level->joints[i].objectB];
+
+            float anchor_x = level->joints[i].anchor.x;
+            float anchor_y = level->joints[i].anchor.y;
+            jointDef.localAnchorA.Set(anchor_x - bodyA->GetPosition().x,
+                                      anchor_y - bodyA->GetPosition().y);
+            jointDef.localAnchorB.Set(anchor_x - bodyB->GetPosition().x,
+                                      anchor_y - bodyB->GetPosition().y);
+            
+            jointDef.bodyA = bodyA;
+            jointDef.bodyB = bodyB;
+            world->CreateJoint(&jointDef);
+        }
+        // Create the pulley joints
+        else if (level->joints[i].joint_type == JOINT_PULLEY) {
+            b2PulleyJointDef jointDef;
+            joint_t joint = level->joints[i];
+
+            b2Body* bodyA = bodies[joint.objectA];
+            b2Body* bodyB = bodies[joint.objectB];
+
+            jointDef.Initialize(bodyA, bodyB, 
+                                b2Vec2(joint.pulley.ground1.x, joint.pulley.ground1.y), 
+                                b2Vec2(joint.pulley.ground2.x, joint.pulley.ground2.y),
+                                b2Vec2(joint.anchor.x, joint.anchor.y),
+                                b2Vec2(joint.pulley.anchor2.x, joint.pulley.anchor2.y),
+                                joint.pulley.ratio);
+            
+            world->CreateJoint(&jointDef);
+
+        }
+        else
+            continue;
+    }
+
     create_player(level->start);
     create_finish(level->end);
 }
@@ -185,9 +232,11 @@ void draw_circle(b2Body *circle){
 	glEnd();
 }
 
-void go_to_level(int level_number) {
-    is_paused = false;
+void destroy_bodies() {
     b2Body *next = world->GetBodyList();
+    if (next == NULL) {
+        return;
+    }
     b2Body *previous = next; 
     next = next->GetNext();
 
@@ -196,7 +245,36 @@ void go_to_level(int level_number) {
         previous = next;
         next = next->GetNext();
     }
-    world->DestroyBody(previous);
+    if (previous != NULL)
+        world->DestroyBody(previous);
+}
+
+void destroy_joints() {
+    b2Joint *next = world->GetJointList();
+    if (next == NULL) {
+        return;
+    }
+    b2Joint *previous = next; 
+    next = next->GetNext();
+
+    while (next != NULL) {
+        world->DestroyJoint(previous);
+        previous = next;
+        next = next->GetNext();
+    }
+    
+    if (previous != NULL)
+        world->DestroyJoint(previous);
+}
+
+void go_to_level(int level_number) {
+    is_paused = false;
+
+    // Destroy all joints before destroying the bodies
+    destroy_joints();
+    destroy_bodies();
+    
+
     is_finished = false;
     load_level(level_number);
 }
@@ -280,7 +358,7 @@ void key_pressed(unsigned char key, int x, int y)
             break;
         // Toggle pause
         case ' ':
-            is_paused = true;
+            is_paused = (bool)((int)is_paused ^ 1);
             break;
         // Restart the level
         case 'r':
