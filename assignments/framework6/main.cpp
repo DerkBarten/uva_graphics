@@ -34,6 +34,7 @@ const float world_x = 8.f, world_y = 6.f; // Level (world) size in meters
 int last_time;
 int frame_count;
 
+/* Convert a point in resolution coordinates to world coordinates */
 point_t reso_to_world(point_t reso_point) {
     point_t world_point;
     world_point.x = (reso_point.x / reso_x) * world_x;
@@ -53,7 +54,7 @@ int current_level = 0;
 // Specifies if the player reached the finish
 bool is_finished = false;
 // Specifies if the level paused
-bool is_paused = false;
+bool is_paused = true;
 
 // Points used for the user defined polygons
 point_t points[4];
@@ -134,9 +135,8 @@ void load_level(unsigned int level_number)
         return;
     }
 
-
     level_t *level = levels + level_number;
-    // Array of b2Body pointers
+    // Keep track of the bodies created
     b2Body **bodies = new b2Body*[level->num_polygons];
 
     // Create the bodies for the polygons in the scene
@@ -177,16 +177,16 @@ void load_level(unsigned int level_number)
             world->CreateJoint(&jointDef);
         }
     }
-
+    // Create the player and the finish object
     create_player(level->start);
     create_finish(level->end);
 }
 
-void draw_polygon(b2Body *body, GLfloat *color) {
+/* Draw the polygons to the screen */
+void draw_polygon(b2Body *body) {
     b2PolygonShape *shape = (b2PolygonShape *)body->GetFixtureList()->GetShape();
     int count = shape->GetVertexCount();
 
-    glColor3f(color[0], color[1], color[2]);
     glPushMatrix();
         // Perform a rigid body motion
         glTranslatef(body->GetPosition().x, body->GetPosition().y, 0);
@@ -201,6 +201,7 @@ void draw_polygon(b2Body *body, GLfloat *color) {
     glPopMatrix();
 }
 
+/* Draw a circle to the screen */
 void draw_circle(b2Body *circle){
 	int i;
 	int triangleAmount = 20;
@@ -215,7 +216,6 @@ void draw_circle(b2Body *circle){
     GLfloat x = circle->GetPosition().x;
     GLfloat y = circle->GetPosition().y;
     
-    glColor3f(1, 0, 0);
 	glBegin(GL_TRIANGLE_FAN);
         // Circle center
 		glVertex2f(x, y);
@@ -262,12 +262,12 @@ void destroy_joints() {
 }
 
 void go_to_level(int level_number) {
-    is_paused = false;
+    // Pause when starting a level
+    is_paused = true;
 
     // Destroy all joints before destroying the bodies
     destroy_joints();
     destroy_bodies();
-    
 
     is_finished = false;
     load_level(level_number);
@@ -287,17 +287,20 @@ void draw(void)
     glColor3f(0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Draw the polygons
     b2Body *body = world->GetBodyList();
-    GLfloat color[3] = {0, 1, 0};
+    glColor3f(0, 1, 0);
     while(body != NULL)
     {
-        draw_polygon(body, color);
-        draw_circle(body);
+        draw_polygon(body);
         body = body->GetNext();
     }
-    color[1] = 0;
-    color[2] = 1;
-    draw_polygon(finish, color);
+    // Draw the player red
+    glColor3f(1, 0, 0);
+    draw_circle(player);
+    // Draw the finish in blue
+    glColor3f(0, 0, 1);
+    draw_polygon(finish);
 
     // Show rendered frame
     glutSwapBuffers();
@@ -312,7 +315,8 @@ void draw(void)
         }
     }
 
-    if (is_paused)
+    // Do not update the world if paused
+    if (!is_paused)
         world->Step(1.0f / 60.0f, 6, 2);
 
     // Display fps in window title.
@@ -443,6 +447,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/* Detect if the player reached the finish */
 void MyContactListener::BeginContact(b2Contact* contact) {
     b2Body *bodyA = contact->GetFixtureA()->GetBody();
     b2Body *bodyB = contact->GetFixtureB()->GetBody(); 
