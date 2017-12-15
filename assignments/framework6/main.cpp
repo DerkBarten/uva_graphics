@@ -49,7 +49,7 @@ b2Body *player;
 b2Body *finish;
 
 // The current level of the game
-int current_level = 3;
+int current_level = 0;
 // Specifies if the player reached the finish
 bool is_finished = false;
 // Specifies if the level paused
@@ -139,27 +139,24 @@ void load_level(unsigned int level_number)
     // Array of b2Body pointers
     b2Body **bodies = new b2Body*[level->num_polygons];
 
+    // Create the bodies for the polygons in the scene
     for (unsigned int i = 0; i < level->num_polygons; i++) {
         poly_t *poly = level->polygons + i;
         bodies[i] = create_polygon(poly);
     }
 
+    // Attach joints to the polygons
     for (unsigned int i = 0; i < level->num_joints; i++) {
         // Create the revolute joints
         if (level->joints[i].joint_type == JOINT_REVOLUTE) {
             b2RevoluteJointDef jointDef;
-            b2Body* bodyA = bodies[level->joints[i].objectA];
-            b2Body* bodyB = bodies[level->joints[i].objectB];
+            joint_t joint = level->joints[i];
 
-            float anchor_x = level->joints[i].anchor.x;
-            float anchor_y = level->joints[i].anchor.y;
-            jointDef.localAnchorA.Set(anchor_x - bodyA->GetPosition().x,
-                                      anchor_y - bodyA->GetPosition().y);
-            jointDef.localAnchorB.Set(anchor_x - bodyB->GetPosition().x,
-                                      anchor_y - bodyB->GetPosition().y);
+            b2Body* bodyA = bodies[joint.objectA];
+            b2Body* bodyB = bodies[joint.objectB];
             
-            jointDef.bodyA = bodyA;
-            jointDef.bodyB = bodyB;
+            jointDef.Initialize(bodyA, bodyB,
+                                b2Vec2(joint.anchor.x, joint.anchor.y));
             world->CreateJoint(&jointDef);
         }
         // Create the pulley joints
@@ -178,10 +175,7 @@ void load_level(unsigned int level_number)
                                 joint.pulley.ratio);
             
             world->CreateJoint(&jointDef);
-
         }
-        else
-            continue;
     }
 
     create_player(level->start);
